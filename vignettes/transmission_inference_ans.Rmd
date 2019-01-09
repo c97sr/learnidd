@@ -1,0 +1,597 @@
+---
+title: "MCMC and data augmentation to infer parameters for model of transmission within clusters -- solutions"
+author: "Steven Riley, Caroline Walters, Ada Yan"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{transmission_inference_ans}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+
+---
+
+## Objectives
+
+In this practical, you are going to be introduced to a set of techniques and skills that are important for the statistically rigorous analysis of infectious disease data:
+* Using statistical software R: Outbreak data are often non-standard, requiring the development of dedicated statistical methods. Here, you are going to learn how to use R. R is a flexible tool that can be used to analyze any kind of data and develop your own statistical methods. 
+* Running Markov chain Monte Carlo (MCMC): You are going to learn how to develop your own MCMC inferential tool for outbreak data.
+* Using data augmentation techniques to deal with missing data: You are going to implement state-of-the-art data augmentation methods to deal with missing data in outbreaks.
+
+## Background: Human influenza challenge model to assess person-to-person transmission
+
+In experimental human challenge studies, susceptible healthy adults are selected by serum antibody levels and infected with an attenuated influenza virus. Those studies are commonly used to evaluate the effectiveness of antiviral agents and influenza vaccines ([Carrat et al, AJE, 2008](https://doi.org/10.1093/aje/kwm375)).
+
+More recently, a pilot study has been run to explore the feasibility of using a challenge study to assess person-to-person transmission and better characterize the routes of influenza transmission ([Killingley et al, JID, 2011](https://doi.org/10.1093/infdis/jir701)). In this design, a “donor” subject is inoculated with influenza and placed in a hotel room with susceptible “recipient” subjects. Recipient subjects are closely monitored.
+
+In this practical, you are going to develop statistical tools to analyze a (simulated) dataset from such a design. The design is as follows:
+
+* There are $n$ clusters.
+* Each cluster is made of 1 donor who is infected at time 0 and 1 recipient who is susceptible to infection at time 0.
+* Subjects from different clusters do not interact with each other (they are kept in separated rooms).
+* Symptoms in donors and recipients are closely monitored. We also know the time of infection of the donor (time 0); but the time of infection of the recipient is unknown (missing data). In the dataset, an unobserved time is coded 1000.
+
+We assume that all infected recipients have symptoms.
+
+You are going to estimate the incubation period of the disease, the infectivity profile and transmission probabilities from this dataset.
+
+You should now open R.
+
+## Part 1: Exploring the data
+
+```{r include = FALSE}
+library(learnidd)
+# devtools::load_all()
+```
+
+### 1.1 Loading the data
+
+```{r}
+data("donor_recipient_data")
+```
+
+### 1.2 Extracting subsets of the data
+
+In R, there are many ways to extract information from a dataset. Explore the different options you have:
+
+```{r eval = FALSE}
+data # prints the whole data set
+```
+```{r echo = FALSE}
+head(data)
+```
+etc.
+
+```{r}
+data[3,] # prints row 3
+```
+
+```{r eval = FALSE}
+data[,4] # prints column 4
+```
+
+```{r echo = FALSE}
+head(data[,4]) # prints column 4
+```
+etc.
+
+```{r}
+data[2,1] # prints (row 2, column 1)
+data[c(2,4),c(5,6)] # prints a subset of rows and columns
+```
+
+You can also use the names of columns. For example:
+
+```{r eval = FALSE}
+data$time.onset.recipient # returns the vector of the times of onset of recipients
+```
+```{r echo = FALSE}
+head(data$time.onset.recipient) # returns the vector of the times of onset of recipients
+```
+etc.
+
+```{r}
+data$time.onset.recipient[c(4,5)] # will return 4th and 5th value of the vector
+```
+
+You can also very easily extract data for a subset of observations that satisfy a certain condition. For example:
+
+```{r eval = FALSE}
+data[(data$recipient.infected==1),] # returns data for clusters (=rows) in which the recipient was infected
+```
+
+```{r echo = FALSE}
+head(data[(data$recipient.infected==1),]) # returns data for clusters (=rows) in which the recipient was infected
+```
+etc.
+
+Get familiar with the different commands available to extract the data.
+
+### 1.3 Descriptive analysis of the data
+
+Many functions are available for the analysis of vectors and matrices in R. For example:
+
+```{r eval = FALSE}
+length(x) # returns the length of vector x
+dim(M) # returns (number of rows, number of columns) of a matrix M
+sum(x) # returns the sum of the elements of x
+mean(x) # returns the mean of x
+quantile(x,prob=c(0.025,0.5,0.975))  # returns the 2.5%, 50% and 97.5% percentiles of the distribution of x
+sd(x) # returns the standard deviation
+summary(x) # returns summary statistics for x -- the minimum, 1st quartile, median, mean, 3rd quartile, and max
+hist(x) # plots a histogram of x
+```
+
+Use those functions to:
+
+**Qu. 1.1** Determine the number of clusters in the study.
+
+```{r}
+dim(data)[1]
+```
+or
+```{r}
+nrow(data)
+```
+
+**Qu. 1.2** Determine the number of variables in the dataset.
+
+```{r}
+dim(data)[2]
+```
+or
+```{r}
+ncol(data)
+```
+
+**Qu. 1.3** Determine the number and proportion of recipients that got infected.
+
+```{r}
+n_infected <- sum(data$recipient.infected == 1)
+n_clusters <- nrow(data)
+prop_infected <- n_infected / n_clusters
+n_infected
+prop_infected
+```
+
+**Qu. 1.4** Describe the distribution of the incubation period of influenza for donors (e.g. mean, median, percentiles etc).
+
+```{r}
+incub <- data$time.onset.donor
+mean(incub)
+median(incub)
+quantile(incub, prob = c(0.025, 0.975))
+```
+
+**Qu. 1.5** Plot the distribution of the incubation period.
+
+```{r}
+hist(incub)
+```
+
+You can also apply the same function to each column or each row of the data. For example:
+
+```{r eval = FALSE}
+apply(data,1,mean) # calculates the mean for each row of the data;
+apply(data,2,mean) # calculates the mean for each column of the data;
+```
+
+**Qu. 1.6** Use function `apply` to get summary statistics for all the variables in the dataset. How can you get it for a subset of observations (for example, for the clusters where the recipient was infected)?
+
+```{r}
+apply(data, 2, summary)
+apply(data[data$recipient.infected == 1, ], 2, summary)
+```
+
+
+**Qu. 1.7** Type `help("which.max")` to bring up the help file for the functions `which.min` and `which.max`.  What do these functions do?  Determine the row with the earliest symptom onset time among infected recipients.
+
+```{r}
+data[which.min(data$time.onset.recipient),]
+```
+
+### 1.4: Create new vectors and matrices – the serial interval
+
+New variables are created with command `<-`. For example:
+
+```{r eval = FALSE}
+a<-rep(0,5) # create a vector of length 5 {0,0,0,0,0}.
+b<-1:5 # create a vector {1,2,3,4,5}.
+c<-matrix(0,nrow=3,ncol=5) # create a 3x5 matrix, with all cells =0.
+```
+
+**Qu. 1.8** Create a new vector `serial.interval` that contains values of the serial interval (i.e. difference between symptom onset in the donor and symptom onset in the recipient, restricted to clusters where the recipient was infected).
+
+```{r}
+serial.interval <- data$time.onset.recipient - data$time.onset.donor
+serial.interval <- serial.interval[data$recipient.infected == 1]
+serial.interval
+```
+
+**Qu. 1.9** Give the mean, standard deviation, 2.5\% and 97.5\% percentiles of the serial interval. What is the proportion of serial intervals that are less than 0? Is that possible? What does that imply about the timing of infectivity relative to that of symptoms?
+
+```{r}
+mean(serial.interval)
+sd(serial.interval)
+quantile(serial.interval, prob = c(0.025, 0.975))
+sum(serial.interval < 0) / length(serial.interval)
+```
+
+<span style="color:blue">Serial intervals less than 0, i.e. a recipient showing symptoms before a donor, are possible.  They imply that infection of the recipient occurred before the donor showed symptoms, so infection must be possible before symptoms start showing.  For this disease, if control measures were put in place conditional on showing symptoms (ie. Stay home from work given symptoms), then potential infections might not be prevented.</span>
+
+## Part 2: Modelling incubation
+
+We build a model to describe transmission in clusters. In this section, we will build a model for the incubation; later, we will build a model for transmission.
+
+The incubation period $d$ is modelled with an Exponential distribution with mean $m_{incub}$.
+The probability density function is given by
+
+$$f_{incub} (d \mid  m_{incub}) = \frac{\exp(-d / m_{incub})}{m_{incub}}$$
+Look at how $f_{incub}$ is coded by typing `f.incub`.
+
+**Qu 2.1**: Plot $f_{incub}$ for $m_{incub} = 1.5$ and $m_{incub} = 3$ using the below code:
+
+```{r}
+x<-seq(0,12,by=0.001) #x is the vector {0,0.001,0.002,0.003,...,12}
+
+param1<-c(m.incub = 1.5)
+param2<-c(m.incub = 3)
+
+plot(x,f.incub(x,param1),type="l",col="blue",xlab="Time (days)",ylab="Density") #plot f.incub for param1
+lines(x,f.incub(x,param2),col="red") # add line for param2
+legend(2,0.6,c("param1","param2"),fill=c("blue","red"),cex=0.8,bty="n") # add legend
+```
+
+
+<span style="color:blue">This plot shows the probability density function for the incubation period distribution. That is, what is the probability of an infected individual having an incubation period of a particular duration? This is described by an exponential distribution with known mean. Here, most individuals have a very short incubation period, and it is unlikely that an incubation period of >6 days would be observed.</span>
+
+Describe the differences.
+
+<span style="color:blue">The mean incubation period for ${param}_1$ is shorter, so the probability density is higher for short incubation periods and lower for long incubation periods.  In other words, short incubation periods are more likely for ${param}_1$.</span>
+
+## Part 3: Intro to MCMC - estimating the incubation period.
+
+In this section, you are going to estimate the mean incubation period parameter $m_{incub}$ via MCMC. The time of infection of the recipient is unknown; so you are solely going to rely on data from the donors.
+
+We specify a flat prior for parameter $m_{incub}$, for example Uniform([0;10,000]).
+
+The likelihood is:
+
+$$P(\mathbf{d} \mid  m_{incub}) = \prod_i f_{incub} (d_i \mid  m_{incub})$$
+
+The log-likelihood is
+
+$$LL = \sum_i \log(f_{incub} (d_i \mid  m_{incub}))$$
+
+**Qu. 3.1** The below function to return the contribution of each cluster to the log-likelihood is partially written.  Complete the function.
+
+```{r eval = FALSE}
+calculateLogLikCluster_incubation <- function(p, data)	{ #returns contribution of cluster to log-likelihood
+LL<-log(XXXXX) 	#incubation period of donor 	#You need to replace �XXXXX� by appropriate expression
+return(LL)
+}
+```
+
+```{r echo = FALSE}
+calculateLogLikCluster_incubation
+```
+
+**Qu. 3.2** Look at the structure of the MCMC algorithm. Compare it with the one that was presented in the lecture. Do they match? Do you understand how the algorithm works?
+
+<span style="color:blue">The two algorithms are pretty much equivalent. The main difference is that the R code uses log likelihoods and a log proposal ratio. We therefore add/subtract log values rather than multiplying/dividing as in the slides. This is also reflected in the line `log(runif(1))`, where we compare the acceptance ratio to the log of a random number between 0 and 1 to decide whether or not to accept the proposed move. Working in log space is computationally easier and more accurate when working with very small probabilities.</span>
+
+**Qu. 3.3** Run the MCMC algorithm for a small number of iterations (e.g. 200). Tune the standard deviation of the random walk `randomWalkSD` so that the acceptance rate `acceptance_rate` is about 20\%. Run the MCMC algorithm for a larger number of iterations (e.g. 1000 or 2000).
+The code to run the MCMC algorithm for 200 iterations with a random walk standard deviation of 0.5 is given below.
+
+```{r, eval = FALSE}
+mcmc_results <- run_MCMC(fit_parnames = "m.incub",
+                         nbIteration = 200,
+                         randomWalkSD = 0.5,
+                         currentParameter = c(m.incub = 1.5),
+                         data = data)
+storedParameter <- mcmc_results$storedParameter
+logLik <- mcmc_results$logLik
+acceptance_rate <- mcmc_results$acceptance_rate
+```
+
+<span style="color:blue">The acceptance rate is a useful measure of how efficiently the random walk is moving around probability space, and therefore how efficiently it is sampling from the posterior distribution. If the acceptance rate is low, then a lot of proposed moves are being rejected. This is because too many of the proposed values for the parameters (theta) result in poor likelihoods and are rejected. In this case, the MCMC chain does not move around parameter space very often and therefore takes a long time to sample from the posterior.</span>
+
+<span style="color:blue">If the acceptance rate is high, then most of the proposed moves are accepted. This is because most of the proposed values for theta are near the current position, and the chain therefore slowly moves around the high-density region of the posterior.  This will result in a very slow walk around the space of possible parameter values, as many proposals would need to be accepted in a row to move to a different region of parameter space.</span>
+
+<span style="color:blue">The acceptance rate is decreased by increasing the standard deviation of the random walk, and vice versa.</span>
+
+<span style="color:blue">A value of `randomWalkSD = 0.4` gives an acceptance rate of 0.19 (results may vary due to stochasticity of the algorithm).</span>
+
+**Qu. 3.4** Plot the output of the MCMC. How long does it take for the chain to converge? Define the burn in accordingly (the burn in is the number of iterations one needs to drop at the beginning of the chain).
+The code for a burn-in of one iteration is given below.
+
+```{r, eval = FALSE}
+burnIn <- 1
+storedParameter <- storedParameter[-(1:burnIn), , drop = FALSE]
+logLik <- logLik[-(1:burnIn)]
+
+for(parID in 1:ncol(storedParameter)) {
+  dev.new()
+  plot(storedParameter[,parID],type="l")
+}
+
+dev.new()
+plot(logLik,type="l",main="logLik")
+```
+
+<span style="color:blue">The chain converges quickly in most cases, so the burn in period can be small. If the starting parameter value is close to the high posterior density region, then the algorithm quickly starts exploring the true posterior and our burn in is small. The burn in period accounts for the possibility that the chain starts in a region of posterior density that we are not interested in (i.e. low density region). For example, if the starting parameter value gave a log likelihood of -1000, and all values +/-1 of the starting value also gave a log likelihood of -1000, then the MCMC chain would accept all proposed moves to values +/- 1. If the true maximum likelihood was, say, -200, but at a parameter value of +5 away from the starting value, it might take the algorithm a while to reach this region of parameter space. Discarding this first period where the random walk algorithm “finds” the high density region that we are interested in is the burn in period.</span>
+
+<span style="color:blue">There is no disadvantage to discarding a larger number of iterations at the beginning -- one simply needs to run the MCMC algorithm for longer to get the desired number of iterations to keep.  Discarding too few iterations, however, can lead to biased estimation of the posterior distribution.</span>
+
+<span style="color:blue">However, the idea of discarding a “burn in” period is not clear cut, as even the burn in samples are samples from the posterior distribution. If interested, have a quick browse of the following:
+http://users.stat.umn.edu/~geyer/mcmc/burn.html</span>
+
+```{r}
+mcmc_results <- run_MCMC(fit_parnames = "m.incub",
+                         nbIteration = 1000,
+                         randomWalkSD = 0.4,
+                         currentParameter = c(m.incub = 1.5),
+                         data = data)
+storedParameter <- mcmc_results$storedParameter
+logLik <- mcmc_results$logLik
+acceptance_rate <- mcmc_results$acceptance_rate
+
+plot(logLik,type="l",main="logLik")
+```
+
+<span style="color:blue">Based on the above graph, the MCMC chain has converged by 100 iterations, so I choose a burn-in of 100 iterations.</span>
+
+```{r}
+burnIn <- 100
+storedParameter <- storedParameter[-(1:burnIn), , drop = FALSE]
+logLik <- logLik[-(1:burnIn)]
+
+for(parID in 1:ncol(storedParameter)) {
+  plot(storedParameter[,parID],type="l")
+}
+
+plot(logLik,type="l",main="logLik")
+```
+
+**Qu. 3.5** Give the posterior mean, median, 2.5% and 97.5% percentiles of the posterior distribution.
+
+```{r}
+mean(storedParameter)
+median(storedParameter)
+quantile(storedParameter, prob = c(0.025, 0.975))
+```
+
+## Part 4: Modelling transmission
+
+For the recipient, the hazard of infection at time `t` is
+
+$$h(t \mid  \beta, m_{inf}) = \beta \frac{\exp(- t / m_{inf})}{m_{inf}}$$
+
+The cumulative hazard at time `t` is
+
+$$H(t \mid  \beta, m_{inf}) = \int_0^t h(u \mid  \beta, m_{inf}) du = \beta [1 - \exp(-t / m_{inf})]$$
+
+You have seen in the lecture that the probability to survive infection until time `t` is
+
+$$S(t \mid  \beta, m_{inf}) = \exp(-H(t \mid  \beta, m_{inf}))$$
+
+We combine these equations with the previous equation for $f_{incub}$ to obtain the full model.  The parameters of the model are $\mathbf{p} = \{m_{incub}, \beta, m_{inf}\}$.
+
+
+**Qu. 4.1** Complete functions `h`, `H`, `S` with their expression. [You need to replace "XXXXX" by appropriate expression].
+
+```{r eval = FALSE}
+h <- function(t,p) {
+  return( XXXXX )
+}
+
+H <- function(t,p) {
+  return( XXXXX )
+}
+
+S <- function(t,p) {
+  return( XXXXX )
+}
+```
+
+```{r echo = FALSE}
+h
+
+H
+
+S
+```
+
+**Qu. 4.2** Plot `h` , `H` and `S` for the 2 following sets of parameters, based on the previous code to plot `f.incub`:
+
+$${param}_1 = \{\beta = 0.5, m_{inf} = 2\}$$
+$${param}_2 = \{\beta = 0.2, m_{inf} = 3\}$$
+
+```{r}
+t<-seq(0,12,by=0.001)
+
+param1<-c(beta = 0.5, m.inf = 2)
+param2<-c(beta = 0.2, m.inf = 3)
+
+plot(x,h(t,param1),type="l",col="blue",xlab="Time (days)",ylab="Density") #plot of f.incub
+lines(x,h(t,param2),col="red")
+
+plot(x,H(t,param1),type="l",col="blue",xlab="Time (days)",ylab="Density") #plot of f.incub
+lines(x,H(t,param2),col="red")
+
+plot(x,S(t,param1),type="l",col="blue",xlab="Time (days)",ylab="Density") #plot of f.incub
+lines(x,S(t,param2),col="red")
+```
+
+<span style="color:blue">The graph of $h$ shows the density function for the risk of becoming infected over time. Note that this is the risk at a particular time and is therefore conditional on having not been infected previously. As a result, the probability of becoming infected is smaller for longer times, as the individual would need to have escaped infection at all previous times. It’s a bit like flipping a coin many times and recording the flip at which you observe your first heads (0.5 chance on the first flip, 0.25 on the second, 0.125 on the third etc). The difference is that this waiting time is given by an exponential distribution (rather than a sequence of Bernoulli trials) as specified by our function.
+The graph of $H$ shows the cumulative risk of becoming infected, linked to the description for the hazard function above.   It is used to calculate the probability of having been infected up to a given time 
+The graph of $S$ is the probability of having not been infected up to a given time (i.e. of escaping infection).</span>
+
+<span style="color:blue">For more information see https://web.stanford.edu/~lutian/coursepdf/unit1.pdf</span>
+
+**Qu. 4.3** Looking at the graphs, what is the probability to survive infection for ${param}_1$? For ${param}_2$?
+
+<span style="color:blue">By eye: about 0.6 and 0.85 respectively.  Numerically:</span>
+
+```{r}
+S(1000, param1) # 1000 days is close enough to infinite time
+S(1000, param2)
+```
+
+<span style="color:blue">${param}_1$ gives a lower survival probability than ${param}_2$. That is, an individual is less likely to avoid getting infected under the conditions of ${param}_1$. This is likely driven by the higher transmission rate in ${param}_1$ given by the higher value of $\beta$.</span>
+
+## Part 5: MCMC and data augmentation - estimating transmission parameters in the context of missing data.
+
+You are now going to use data augmentation techniques to estimate the 3 parameters of our transmission model.
+
+To start the MCMC alogirthm with data augmentation, initial values need to be chosen for the augmented data.  Look at the code for `run_MCMC_DA` to find the function to generate augmented data. 
+
+```{r, eval = FALSE}
+data <- t(apply(data, 1, augment_data)) # (near the start)
+# apply is used to augment the data for each cluster; t() transposes the results to put them in the original format
+```
+
+For each infected recipient, a random value is drawn for `data$time.infection.recipient` that is consistent with the data: for example, a value that is uniformly drawn between the infection of the donor & the onset in the recipient. The function `runif(1,A,B)` returns a value uniformly drawn in interval $[A,B]$.  
+
+**Qu. 5.1** Look at the code for `augment_data` you found earlier to see how this works.
+
+```{r}
+augment_data
+```
+
+<span style="color:blue">We need to generate plausible starting values for the infection times of each recipient. The logic is: what are the earliest and latest time an individual could have been infected, given that we know who infected them? We know that the recipient must have been infected after the donor was infected (and therefore infectious), but not necessarily after the donor exhibited symptoms. The lower bound, A, is therefore the infection time of the donor. We also know that the recipient only shows symptoms after the infection event, so the upper bound, B, is the time of onset of symptoms in the recipient.</span>
+
+<span style="color:blue">So we make the `time.infection.recipient` variable a random number between the `time.infection.donor` and `time.onset.recipient` value for that cluster.</span>
+
+We have seen in the lecture that the likelihood is made of the following components:
+
+* The contribution of a donor $i$ to the likelihood is simply $f_{incub}(d_i, \mathbf{p})$ where $d_i$ is the incubation period of donor $i$ and $\mathbf{p}$ is the vector of parameter values.
+* The contribution of a recipient $i$ that was infected at time $t_i$ and had symptom onset at time $d_i$ is $S(t_i) h(t_i) f_{incub}(d_i - t_i)$ where the 3 terms are the probability to survive infection up to time $t_i$, the hazard of infection at time $t_i$ and the density of the incubation period $d_i - t_i$, respectively.
+* The contribution of a recipient that was not infected throughout the experiment is $S(\infty)$, that we approximate by $S(1000)$.
+
+**Qu. 5.2** The function `calculateLogLikCluster_transmission` is given below. Can you find the contributions of the different types of individuals in the code?  Check your answers by looking at the source code for the function, by typing `calculateLogLikCluster_transmission`.
+
+```{r eval = FALSE}
+calculateLogLikCluster_transmission <- function(p, data) {
+  LL<-log(f.incub(data[["time.onset.donor"]],p))
+  if(data[["recipient.infected"]]==1) {
+    LL<-LL+log(S(data[["time.infection.recipient"]],p)) +
+      log(h(data[["time.infection.recipient"]],p)) +
+      log(f.incub(data[["time.onset.recipient"]]-data[["time.infection.recipient"]],p))
+  } else  {
+    LL<-LL+log(S(1000,p))
+  }
+  return(LL)
+}
+```
+
+```{r echo = FALSE}
+calculateLogLikCluster_transmission
+```
+
+The MCMC algorithm of Part 3 has been modified to be able to handle the times of infection as augmented data. Look at the changes that were made.
+
+**Qu. 5.3** How are the times of infection updated? Explain why the log ratio of proposals, i.e. the value given by `logRatioProposal_DA`, is 0.
+
+<span style="color:blue">We propose new infection times for each recipient from a uniform distribution. The log ratio of proposals is null because the proposal probabilities are symmetric (the q terms in the MCMC algorithm cancel out between the top and bottom). This is because of there is an equal probability of proposing any value for the infection time given any current value for infection time.</span>
+
+**Qu. 5.4** When we update the time of infection in a cluster, we only calculate the likelihood for that cluster, not for the whole dataset. Do you understand why?
+
+<span style="color:blue">Each cluster is independent, and the infection times in each cluster only apply to that cluster. The model parameters, theta, apply to all of the clusters, and we therefore need to calculate the acceptance probability based on the change in likelihood summed across all clusters. For the infection times, each update only applies to the likelihood for that cluster, and we can therefore carry out the proposal/acceptance step for the cluster on its own.  We would get the same solution if we re-evaluated the likelihood for the whole dataset, but it would be computationally wasteful.</span>
+
+Run the MCMC using the following code:
+
+```{r cache = TRUE}
+mcmc_results <- run_MCMC_DA(fit_parnames = c("m.incub", "beta", "m.inf"),
+                            nbIteration = 2000,
+                            randomWalkSD = c(0.2, 0.4, 0.3),
+                            currentParameter = c(m.incub = 2,
+                                                 beta = 0.2,
+                                                 m.inf = 2),
+                            data = data)
+storedParameter <- mcmc_results$storedParameter
+logLik <- mcmc_results$logLik
+acceptance_rate_parameters <- mcmc_results$acceptance_rate_parameters
+acceptance_rate_DA <- mcmc_results$acceptance_rate_DA
+```
+
+**Qu. 5.5** Plot the MCMC output. Assess convergence and define burn in. Give the posterior mean and 95\% credible interval of parameters.
+
+
+```{r}
+for(parID in 1:ncol(storedParameter))  {
+  plot(storedParameter[,parID],type="l")
+}
+plot(logLik,type="l",main="logLik")
+```
+
+<span style="color:blue">The y-axis corresponds to sampled values of that parameter, and the x-axis corresponds to iterations of the MCMC. There are called trace plots. Traces that look more like dense, fuzzy caterpillars tend to have converged better, and you can get a rough feel for convergence based on how the traces look. Traces that appear to move slowly up and down the y-axis tend to have not converged well, and will therefore give a low effective sample size.</span>
+
+<span style="color:blue">The burn in can be very small here (say 100), as the chains appear to converge very quickly (it reaches and samples from a consistent distribution quickly). </span>
+
+<span style="color:blue">For the purposes of analysis, we treat the output vectors of the MCMC run (the storedParameter data frame) as a set of samples from the posterior distribution. This is analogous to the idea that running `runif(100, 0,1)` gives 100 samples from a uniform distribution with A=0 and B=1.</span>
+
+```{r}
+burnIn <- 100
+storedParameter <- storedParameter[-(1:burnIn), , drop = FALSE]
+logLik <- logLik[-(1:burnIn)]
+
+apply(storedParameter, 2, mean)
+apply(storedParameter, 2, quantile, prob = c(0.025, 0.975))
+```
+
+## Part 6: further analysis of samples from the posterior distribution
+
+Install the CODA R package with the command `install.packages("coda")`. You can load the R package with the command `library(coda)` and see all available functions with `library(help="coda")`. 
+
+**Qu. 6.1** Convert the MCMC output into an MCMC object of the CODA package with `storedParameter.mcmc <- mcmc(storedParameter)`. Plot the MCMC object.
+
+```{r, fig.width = 6, fig.height = 10}
+library(coda)
+storedParameter.mcmc <- mcmc(storedParameter)
+plot(storedParameter.mcmc)
+```
+
+<span style="color:blue">This gives the trace plots as before on the left, but also the posterior densities for each of the model parameters on the right. These densities describe the range of values supported by the likelihood (data) and prior for each parameter. The mode is the x-value (parameter value) with the highest density (y value), and the 95\% credible interval describes the upper and lower values between which 95\% of the density is contained.</span>
+
+**Qu. 6.2**: Find the CODA function to plot that sample autocorrelation in the MCMC chains, and plot the sample autocorrelations. What is the sample autocorrelation between every 5th value?
+
+```{r, fig.width = 6, fig.height = 10}
+autocorr.plot(storedParameter.mcmc)
+```
+
+```{r}
+autocorr.diag(storedParameter.mcmc)
+```
+
+<span style="color:blue">The interpretation here is: “how correlated is a sample for the parameter values at iteration $n$ with the sample from iteration $n-5$?”. The more autocorrelated the chain, the longer it takes to fully explore the posterior distribution.</span>
+
+**Qu. 6.3**: Find the function to compute the effective sample size of the MCMC chains, and compute the effective sample size. Why is the effective sample size smaller than 2000? What does that mean for assessing the MCMC output?
+
+```{r}
+effectiveSize(storedParameter.mcmc)
+```
+
+<span style="color:blue">The effective sample size (ESS) is smaller than the number of iterations because the parameter values sampled at each iteration are correlated with the values sampled in previous iterations. Each new sample is therefore not a fully independent draw from the posterior, and doesn’t necessarily give us 1 independent sample’s worth of information. If autocorrelation is 0 at all lags, then $N$ samples will give you N pieces of information about your posterior distribution. If autocorrelation is > 0, then $N$ samples will give $<N$ pieces of information.
+
+A rough guide to “how big is big enough” for effective sample size is to aim for an ESS of at least 200 for each parameter, but there is no concrete rule. </span>
+
+**Qu. 6.4**: Thin the MCMC chains with the command `storedParameter.mcmc.thinned <- mcmc(storedParameter[seq(1,nrow(storedParameter),10),])` and analyse the MCMC output again.
+
+```{r, fig.width = 6, fig.height = 10}
+storedParameter.mcmc.thinned <- mcmc(storedParameter[seq(1,nrow(storedParameter),10),])
+plot(storedParameter.mcmc.thinned)
+autocorr.plot(storedParameter.mcmc.thinned)
+autocorr.diag(storedParameter.mcmc.thinned)
+effectiveSize(storedParameter.mcmc.thinned)
+```
+
+<span style="color:blue">This shows the trace and density plots for the MCMC chain after every 10th iteration has been removed. The result is that the density plots look slightly smoother, but the trace plots look slightly more spread out. The idea here was that because there was a high degree of autocorrelation in the chain, by taking every Nth iteration we are only considering iterations that are less correlated, and therefore more independent by nature. This is reflected in the lower autocorrelation in the lags in the autocorrelation plot. 
+The effective sample size of the thinned chain is also smaller, because we are only counting every 10th iteration compared to the original chain. However, the effective sample size is not 10 times smaller. Although we have removed 90\% of the iterations, we have not reduced the amount of information by 90\%. This is because most of these samples were not providing much additional information due to the autocorrelation.</span>
+
+## Part 7: Extras
+If time permits, you can:
+
+* Think about how you would modify the algorithm to estimate the infectivity and susceptibility of children (relative to adults);
+* You can try to understand how the simulated data was generated (see Appendix).
