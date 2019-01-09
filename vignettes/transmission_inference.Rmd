@@ -42,7 +42,7 @@ You should now open R.
 
 ```{r include = FALSE}
 library(learnidd)
-show_ans <- TRUE
+show_ans <- FALSE
 # devtools::load_all()
 ```
 
