@@ -1,10 +1,10 @@
 ---
-title: "MCMC and data augmentation to infer parameters for model of transmission within clusters"
+title: "MCMC and data augmentation to infer parameters for model of transmission within clusters -- solutions"
 author: "Steven Riley, Caroline Walters, Ada Yan"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{transmission_inference}
+  %\VignetteIndexEntry{transmission_inference_ans}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
