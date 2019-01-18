@@ -4,25 +4,9 @@ author: "Steven Riley, Caroline Walters, Ada Yan"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{influenza-forecasting2019}
+  %\VignetteIndexEntry{forecasting}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
----
-
-<!-- Feedback: -->
-<!-- - could the first bit (install_github etc) have been put into a script rather than on slides and then the script be shared -->
-<!-- - can practicals have a 5/10 min break. (Not simply allowing them to pop in and out whenever, but everyone together and strongly encourage people to step away from their screens) -->
-<!-- - this was a good practical because student did not spend a lot of time stuck on R and therefore felt they could concentrate more on the practical topic -->
-<!-- - this practical was fun -->
-<!-- - the R package format was good because the code they had to run was simpler, but that piqued curiosity to look at the underlying code and they were able to do so -->
-<!-- - the students think it's a good idea to have the spatial practical in an R package format for next year -->
-
-<!-- My observations: -->
-<!-- - Because the students spent more time looking at the data rather than running code, they could spend time thinking about the pros and cons of each model, and come up with alternatives (e.g. fitting a quadratic function) -->
-<!-- - The questions could be more open-ended next year.  If students were stuck on the code and asked for help, we were able to guide them think more deeply about the pros and cons of each model, model assumptions, sources of error etc., but ironically students who didn't have trouble with the code and din't ask for help seemed to be going through the motions and thinking less deeply about the modelling -->
-<!-- - Many students were using Excel (well, ok) or a  calculator (less preferable) to do the accuracy calculations.  I thought that the concepts were more important than teaching them how to do the calculations in R, so I left them alone unless they asked for help re: how to do the calculations in R, but I guess the approach next year will depend on how much of a priority teaching R is -->
-<!-- (tell people to change the starting year back to 2016 after exploring the data) -->
-
 ---
 
 ## Objectives
@@ -100,6 +84,11 @@ Assume that we are part way through the time period covered by the data, at week
 First we fit the linear model.
 Run the code
 ```{r}
+
+incidence_data <- extract_incidence(fluIliCountryData, 
+                    country = "ISR", 
+                    year = 2016)
+
 linear_regression_output <- linear_regression(incidence_data,
                               current_week = 49,
                               n_weeks_prior = 4,
