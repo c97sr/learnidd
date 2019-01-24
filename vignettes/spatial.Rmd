@@ -50,7 +50,7 @@ exactly where you are, give them these all 12 digits, with easting first, as you
 ## 1. Setting up the system for simulation
 
 1. Open `R` and load the data set.
-```{r, eval=TRUE}
+```{r, eval=FALSE}
 library(learnidd)
 path <- "/Volumes/kainslie/teaching/learnidd/"
 source(paste0(path,"R/spatial_practical.R"))
@@ -58,7 +58,7 @@ source(paste0(path,"R/spatial_practical.R"))
 2. Set up an answer document in Word and make sure you can copy and paste
 charts from R to Word.
 3. Prepare the simulation and plot easting by northing.
-```{r, echo=TRUE}
+```{r, eval=FALSE}
 farmdf <- adm.load.sheep.prep.sim(filename = paste0(path,"data/msc_farm_data.csv"))
 plot(farmdf$easting, farmdf$northing)
 ```
@@ -75,7 +75,7 @@ points(easting[seedpts], northing[seedpts], pch=19, col="red")
 detach(farmdf)
 ```
 The function `head()` gives the first 5 rows of a data frame. Type the following at the R prompt:
-```{r, echo = TRUE}
+```{r, eval=FALSE}
 head(farmdf)
 ```
 
