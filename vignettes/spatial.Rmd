@@ -5,7 +5,7 @@ author: "Steven Riley, Kylie Ainslie"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{forecasting}
+  %\VignetteIndexEntry{spatial}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -19,8 +19,8 @@ knitr::opts_chunk$set(echo = TRUE)
 After successfully completing the practical, you will be able to:
  * load and visualize spatial point data
  * define a simple spatial seeding process
- * describe precisely the naive algorithm for simulating the isotropic spatial               transmission of an infectious agent amongst a population of stationary hosts
- * understand how some calculations can be \pre-cached" to improve efficiency
+ * describe precisely the naive algorithm for simulating the isotropic spatial transmission of an infectious agent amongst a population of stationary hosts
+ * understand how some calculations can be pre-cached to improve efficiency
  * define a spatial transmission kernel that will die out in one location but cause
    a large outbreak in another
  * define a kernel that produces sub-expoential wave-like patterns of spread
