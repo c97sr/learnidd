@@ -15,10 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this idsource.  If not, see <http://www.gnu.org/licenses/>. 
 
-# You may need something simimilar to setwd("/Users/sriley/Dropbox/talks/20120309_MSc_Adv_Spatial/")
+# You may need something similar to setwd("/Users/sriley/Dropbox/talks/20120309_MSc_Adv_Spatial/")
 # A function to load up a file and prepare objects to be used for simulation
 adm.load.sheep.prep.sim <- function(
-		filename="msc_farm_data.csv",
+		filename="msc_farm_data.rda",
 		max_kernel_dist=15000,
 		simsteps=0:100) {
 	
