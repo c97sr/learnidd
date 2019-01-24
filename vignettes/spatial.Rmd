@@ -50,29 +50,32 @@ exactly where you are, give them these all 12 digits, with easting first, as you
 ## 1. Setting up the system for simulation
 
 1. Open `R` and load the data set.
-```{r, echo = FALSE}
+```{r, eval=TRUE}
 library(learnidd)
-data("msc_farm_data")
+path <- "/Volumes/kainslie/teaching/learnidd/"
+source(paste0(path,"R/spatial_practical.R"))
 ```
 2. Set up an answer document in Word and make sure you can copy and paste
 charts from R to Word.
 3. Prepare the simulation and plot easting by northing.
-```{r, echo = FALSE}
-farmdf <- adm.load.sheep.prep.sim()
+```{r, echo=TRUE}
+farmdf <- adm.load.sheep.prep.sim(filename = paste0(path,"data/msc_farm_data.csv"))
 plot(farmdf$easting, farmdf$northing)
 ```
 
 **Q 1.1** Copy the chart and describe it. Use www.streetmap.co.uk to see if you can match the (slightly fuzzy) shape to the coastline of Kent. On street map, the default coordinates at the bottom of the map window are in OS grid references.
 
 **Q 1.2** Enter the following commands and describe in words the changes in the chart you made for the previous question. Note that you need to press the return key after the & sign on the second line. The R interpreter will know you are not finished and will add the + sign for you at the start of the next line.
-```{r, echo = FALSE}
+```{r, eval=FALSE}
 attach(farmdf)
 seedpts <- easting > 585000 & easting < 600000 & northing > 120000 & northing < 130000
+farmdf <- adm.load.sheep.prep.sim(filename = paste0(path,"data/msc_farm_data.csv"))
+plot(farmdf$easting, farmdf$northing)
 points(easting[seedpts], northing[seedpts], pch=19, col="red")
 detach(farmdf)
 ```
 The function `head()` gives the first 5 rows of a data frame. Type the following at the R prompt:
-```{r, echo = FALSE}
+```{r, echo = TRUE}
 head(farmdf)
 ```
 
@@ -83,7 +86,7 @@ To obtain the source code for any function in R, you just type the name of the f
 **Q 1.4** Look at the source code for adm.seed.sheep and arm.apply.seed and describe what they do.
 
 Enter the following commands:
-```{r, echo = FALSE}
+```{r, eval=FALSE}
 seedbox <- c(585000,600000,120000,130000)
 s <- adm.seed.sheep(farmdf, 3, seedbox)
 s
@@ -93,7 +96,7 @@ s
 ## 2. The first generation of infection
 
 We will use the function `adm.sheep.params` to generate parameters of our model. Try the following commands at the `R` prompt:
-```{r, echo = FALSE}
+```{r, eval=FALSE}
 p1 <- adm.sheep.params()
 p1
 p2 <- adm.sheep.params()
@@ -101,7 +104,7 @@ p2["power"] <- 3
 p2
 ```
 This is a generational model - we do not need to worry about time. The spatial transmission kernel k(d) in this model is defined as the probability that an infectious farm in generation n infects a susceptible farm at distance d in generation n + 1. The command `sapply(X,f)` applies the function f to each member of the vector X and returns a vector of the same length as X. Enter the following commands:
-```{r, echo = FALSE}
+```{r, eval=FALSE}
 xvals <- (1:150)*100
 plot(xvals,p1["beta"]*sapply(xvals,adm.offset.kernel,p1),type="l",log="x")
 points(xvals,p2["beta"]*sapply(xvals,adm.offset.kernel,p2),type="l",col="red")
@@ -110,7 +113,7 @@ points(xvals,p2["beta"]*sapply(xvals,adm.offset.kernel,p2),type="l",col="red")
 **Q 2.1** Using the results from above and results from similar commands, explain how the parameters offset, power, cutoff and beta affect the shape of the transmission kernel `adm.offset.kernel`. Copy multiple charts into your answer document that illustrate extreme scenarios.
 
 The main simulation function `adm.apply.gen.model` takes the data frame `farmdf` and simulates infection events for the next generation. Run the following R commands:
-```{r, echo = FALSE}
+```{r, eval=FALSE}
 table(farmdf$g_i)
 farmdf$g_i <- -1
 table(farmdf$g_i)
@@ -121,7 +124,7 @@ system.time(for (i in 1:2) farmdf[,"g_i"] <- adm.apply.gen.model(p1,farmdf))
 **Q 2.2** Explain what you are doing with each command above (other than system.time, don't worry about that now). Note that the first two commands a not really necessary, but are included here because you need them next time you run the model. Note also that the last line takes a while to complete.
 
 Now enter the following commands:
-```{r, echo = FALSE}
+```{r, eval=FALSE}
 table(farmdf$g_i)
 adm.plot.gen(farmdf)
 ```
@@ -135,11 +138,11 @@ adm.plot.gen(farmdf)
 **Q 3.1** How do you think the computer is spending most of its time?
 
 Enter the following commands:
-```{r, echo = FALSE}
-dm <- adm.setup.aux.mat(dat)
+```{r, eval=FALSE}
+dm <- adm.setup.aux.mat(farmdf)
 ```
 It should take less than 3 minutes to complete. Now run the model again, but using the new object `dm` as an argument in the main simulation call.
-```{r, echo = FALSE}
+```{r, eval=FALSE}
 table(farmdf$g_i)
 farmdf$g_i <- -1
 table(farmdf$g_i)
