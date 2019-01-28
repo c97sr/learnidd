@@ -17,6 +17,8 @@
 
 # You may need something similar to setwd("/Users/sriley/Dropbox/talks/20120309_MSc_Adv_Spatial/")
 # A function to load up a file and prepare objects to be used for simulation
+#' @export
+
 adm.load.sheep.prep.sim <- function(
 		#filename="msc_farm_data",
 		max_kernel_dist=15000,
