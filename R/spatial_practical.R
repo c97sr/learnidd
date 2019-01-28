@@ -18,12 +18,13 @@
 # You may need something similar to setwd("/Users/sriley/Dropbox/talks/20120309_MSc_Adv_Spatial/")
 # A function to load up a file and prepare objects to be used for simulation
 adm.load.sheep.prep.sim <- function(
-		filename="msc_farm_data.rda",
+		#filename="msc_farm_data",
 		max_kernel_dist=15000,
 		simsteps=0:100) {
 	
 	# Load up the file
-	dat <- read.csv(filename)
+	#dat <- read.csv(filename)
+  dat <- farmdat
 	nofarms <- dim(dat)[1]
 	
 	# Add dummy rows for the different elements of the simulation
