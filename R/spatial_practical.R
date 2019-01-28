@@ -92,14 +92,6 @@ adm.seed.sheep <- function(tab,nseed=1,sdsq=c(0,10000000,0,1000000)) {
 	x
 }
 
-#' Function to see farms randomly near to the coast
-#' 
-#' @param tab data frame with farm coordinates
-#' @param nseed number of seeds
-#' @param sdsq vector of bounds for easting and northing coordinates
-#' @return the value of seeds as UIDs
-#' @export
-
 #' Function to plot farms randomly near to the coast
 #' 
 #' @param tab data frame with farm coordinates
@@ -176,7 +168,7 @@ adm.apply.gen.model <- function(p,df,distmatrix=NULL) {
 #' Function to plot the generations of the simulation
 #' @param datf data frame with farm coordinates and generation times
 #' @param gens vector of generations to be plotted
-#' @param cols vector of point colors for each generation (should be same length as gens vecor)
+#' @param cols vector of point colors for each generation (should be same length as gens vector)
 #' @return plot of the modelled disease spread with a color indicating a different generation
 #' @export
 adm.plot.gen <- function(datf,gens=c(0,1,2,3),cols=c("red","blue","green","orange")) {
