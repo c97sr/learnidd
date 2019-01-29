@@ -12,7 +12,7 @@ adm.plot.gen(datf, gens = c(0, 1, 2, 3), cols = c("red", "blue",
 
 \item{gens}{vector of generations to be plotted}
 
-\item{cols}{vector of point colors for each generation (should be same length as gens vecor)}
+\item{cols}{vector of point colors for each generation (should be same length as gens vector)}
 }
 \value{
 plot of the modelled disease spread with a color indicating a different generation

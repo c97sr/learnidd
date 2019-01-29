@@ -2,7 +2,7 @@
 % Please edit documentation in R/spatial_practical.R
 \name{adm.plot.farm.and.seeds}
 \alias{adm.plot.farm.and.seeds}
-\title{Function to see farms randomly near to the coast}
+\title{Function to plot farms randomly near to the coast}
 \usage{
 adm.plot.farm.and.seeds(tab, vecseeds)
 }
@@ -10,18 +10,10 @@ adm.plot.farm.and.seeds(tab, vecseeds)
 \item{tab}{data frame with farm coordinates}
 
 \item{vecseeds}{vector of seeds}
-
-\item{nseed}{number of seeds}
-
-\item{sdsq}{vector of bounds for easting and northing coordinates}
-
-\item{tab}{data frame with farm coordinates}
 }
 \value{
-the value of seeds as UIDs
-
 plot of randomly selected farms near the coast
 }
 \description{
-Function to see farms randomly near to the coast
+Function to plot farms randomly near to the coast
 }
