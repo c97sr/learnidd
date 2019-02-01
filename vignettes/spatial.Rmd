@@ -29,11 +29,11 @@ After successfully completing the practical, you will be able to:
 
 ## Format
 
-  **Timing** We have 2 1/2 hours to meet our objectives. However, I would expect people to progress at quite different rates depending on their familiarity with the concepts and their experience with R. At various points in time we will come together as a group to review answers and to discuss issues that arise. We will break for 30 minutes after 90 minutes and we will use the last 10 minutes to address any outstanding issues.
+  **Timing** We have 2 hours to meet our objectives. However, I would expect people to progress at quite different rates depending on their familiarity with the concepts and their experience with R. At various points in time we will come together as a group to review answers and to discuss issues that arise. We will break for 15 minutes after 60 minutes and we will use the last 10 minutes to address any outstanding issues.
 
   **Approach** Most of this practical should be completed in pairs. The demonstrator will help you to organise yourselves so that each pair has someone who is confident with R-based computation. The initial questions are very specific and are designed to help you familiarise yourself with the model and its implementation. As you move through the practical, the questions become more and more open-ended. The final questions are, really, suggestions for mini research projects that you can start today or pick up in your own time after the practical. You may want to break out of your pairs as you start to tackle the later questions.
   
-  **R as a Tool** As mentioned before, this is not a course in R. However, R is a very useful tool to help you fully understand some of the more important concepts of infectious disease dynamics. At the very start of the session, the instructor will give an introduction to the functions we are using today. As you read through 2 the R code, if you see a function `somefunction` that is not defined in the file `spatial_practical.R`, please type `?somefunction` to find out more about it.
+  **R as a Tool** As mentioned before, this is not a course in R. However, R is a very useful tool to help you fully understand some of the more important concepts of infectious disease dynamics. At the very start of the session, the instructor will give an introduction to the functions we are using today. As you read through the R code, if you see a function `somefunction` that is not defined in the file `spatial_practical.R`, please type `?somefunction` to find out more about it.
   
 ## Background
 
@@ -41,47 +41,41 @@ A new livestock disease has emerged in the northern Rhine area of Germany. Cases
 
 Prevailing weather conditions suggest that the most likely seeding scenario for the UK is a small cluster of farms on the coast of Kent. You have been provided with the detailed locations of 1501 farms thought to be most at-risk in the first few generations of infection, and asked to investigate likely initial patterns of spread. Please note, the data you have been provided with are based on the real density of sheep farms in the area, but the precise locations of individual farms in these data have been generated randomly.
 
-For each farm, you have only two fields: **easting** and **northing**. The former is
-the x location in metres and the latter is the y location. These 6-figure values
-form the standard coordinate system for the UK: if you ever need to tell someone
-exactly where you are, give them these all 12 digits, with easting first, as your
-"grid reference".
+For each farm, you have only two fields: **easting** and **northing**. The former is the x location in metres and the latter is the y location. These 6-figure values form the standard coordinate system for the UK: if you ever need to tell someone exactly where you are, give them these 12 digits, with easting first, as your "grid reference".
 
 ## 1. Setting up the system for simulation
 
-1. Open `R` and load the data set.
+1. Open `R`, install the `learnidd` package from GitHub, and load the data set.
 ```{r, eval=FALSE}
+devtools::install_github("c97sr/learnidd", build_opts = c("--no-manual"), force = TRUE)
 library(learnidd)
-path <- "/Volumes/kainslie/teaching/learnidd/"
-source(paste0(path,"R/spatial_practical.R"))
+data("spatial_data")
 ```
-2. Set up an answer document in Word and make sure you can copy and paste
-charts from R to Word.
+2. Set up an answer document in Word and make sure you can copy and paste charts from R to Word.
 3. Prepare the simulation and plot easting by northing.
 ```{r, eval=FALSE}
-farmdf <- adm.load.sheep.prep.sim(filename = paste0(path,"data/msc_farm_data.csv"))
+farmdf <- adm.load.sheep.prep.sim()
 plot(farmdf$easting, farmdf$northing)
 ```
 
-**Q 1.1** Copy the chart and describe it. Use www.streetmap.co.uk to see if you can match the (slightly fuzzy) shape to the coastline of Kent. On street map, the default coordinates at the bottom of the map window are in OS grid references.
+**Q 1.1** Copy the chart and describe it. Use [www.streetmap.co.uk](www.streetmap.co.uk) to see if you can match the (slightly fuzzy) shape to the coastline of Kent. On street map, the default coordinates at the bottom of the map window are in OS grid references.
 
-**Q 1.2** Enter the following commands and describe in words the changes in the chart you made for the previous question. Note that you need to press the return key after the & sign on the second line. The R interpreter will know you are not finished and will add the + sign for you at the start of the next line.
+**Q 1.2** Enter the following commands and describe in words the changes in the chart you made for the previous question.
 ```{r, eval=FALSE}
 attach(farmdf)
 seedpts <- easting > 585000 & easting < 600000 & northing > 120000 & northing < 130000
-farmdf <- adm.load.sheep.prep.sim(filename = paste0(path,"data/msc_farm_data.csv"))
 plot(farmdf$easting, farmdf$northing)
 points(easting[seedpts], northing[seedpts], pch=19, col="red")
 detach(farmdf)
 ```
-The function `head()` gives the first 5 rows of a data frame. Type the following at the R prompt:
+The function `head()` gives the first 5 rows of a data frame. Type the following in the R prompt:
 ```{r, eval=FALSE}
 head(farmdf)
 ```
 
 **Q 1.3** Other than coordinates, what are the additional fields? What do you think they are used for?
 
-To obtain the source code for any function in R, you just type the name of the function without the brackets (). Also, you can open the file spatial.R in the R editor and examine the source.
+To obtain the source code for any function in R, you just type the name of the function without the brackets (). Also, you can open the file spatial.R in the R editor and examine the source. Please DO NOT edit the source file!
 
 **Q 1.4** Look at the source code for adm.seed.sheep and arm.apply.seed and describe what they do.
 
@@ -95,7 +89,7 @@ s
 
 ## 2. The first generation of infection
 
-We will use the function `adm.sheep.params` to generate parameters of our model. Try the following commands at the `R` prompt:
+We will use the function `adm.sheep.params` to generate parameters of our model. Type the following commands in the `R` prompt:
 ```{r, eval=FALSE}
 p1 <- adm.sheep.params()
 p1
@@ -112,7 +106,7 @@ points(xvals,p2["beta"]*sapply(xvals,adm.offset.kernel,p2),type="l",col="red")
 
 **Q 2.1** Using the results from above and results from similar commands, explain how the parameters offset, power, cutoff and beta affect the shape of the transmission kernel `adm.offset.kernel`. Copy multiple charts into your answer document that illustrate extreme scenarios.
 
-The main simulation function `adm.apply.gen.model` takes the data frame `farmdf` and simulates infection events for the next generation. Run the following R commands:
+The main simulation function `adm.apply.gen.model()` takes the data frame `farmdf` and simulates infection events for the next generation. Run the following R commands:
 ```{r, eval=FALSE}
 table(farmdf$g_i)
 farmdf$g_i <- -1
@@ -154,7 +148,7 @@ system.time(
 )
 ```
 **Q 3.2** Explain the differences between these results and those of the previous runs.
-**Q 3.3** Look at the source code for the function `adm.apply.gen.model`. Describe precisely in your own words how the function simulates the next generation of infections according to the specified kernel.
+**Q 3.3** Look at the source code for the function `adm.apply.gen.model()`. Describe precisely in your own words how the function simulates the next generation of infections according to the specified kernel.
 
 ## 4. The first few generations
 
@@ -173,14 +167,9 @@ parameters that make the kernel almost flat.
 
 **Q 4.5** Compare and contrast the two kernels from **Q 4.3** and **Q 4.4**. What features of the spatial processes lead to qualitatively different patterns.
 
-## 5. Reactive vaccination
-If time permits, the demonstrator will set a specific challenge for you, that you must complete without using your computer.
+## 5. Further questions
 
-## 6. Further questions
+**Q 5.1** Based on your lectures, what other techniques are there for improving the efficiency of the simulation algorithm we have used today? How would you design the auxiliary data structures you need for such improvements? Design and implement a refinement of the function `adm.apply.gen.model()` that is even faster.
 
-**Q 6.1** Based on your lectures this morning, what other techniques are there for improving the efficiency of the simulation algorithm we have used today? How would you design the auxiliary data structures you need for such improvements? Design and implement a refinement of the function `adm.apply.gen.model` that is even faster.
-
-**Q 6.2** The simple vaccination scenario we discussed in section 5 was not at all realistic. Search for "foot-and-mouth vaccination" on pubmed and read the abstracts of some modelling studies. What other types of vaccination strategy might you want to try? How would you design data structures and function to test your strategies? Implement a ring and a doughnut vaccination policy and compare them for different kernels.
-
-**Q 6.3** Are there other aspects of this practical that you have found interesting?
+**Q 5.2** Are there other aspects of this practical that you have found interesting?
 Suggest an interesting question to the demonstrator.
