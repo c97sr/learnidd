@@ -17,6 +17,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Objectives
 
 After successfully completing the practical, you will be able to:
+
  * load and visualize spatial point data
  * define a simple spatial seeding process
  * describe precisely the naive algorithm for simulating the isotropic spatial transmission of an infectious agent amongst a population of stationary hosts
@@ -68,6 +69,7 @@ plot(farmdf$easting, farmdf$northing)
 points(easting[seedpts], northing[seedpts], pch=19, col="red")
 detach(farmdf)
 ```
+
 The function `head()` gives the first 5 rows of a data frame. Type the following in the R prompt:
 ```{r, eval=FALSE}
 head(farmdf)
@@ -77,7 +79,7 @@ head(farmdf)
 
 To obtain the source code for any function in R, you just type the name of the function without the brackets (). Also, you can open the file spatial.R in the R editor and examine the source. Please DO NOT edit the source file!
 
-**Q 1.4** Look at the source code for adm.seed.sheep and arm.apply.seed and describe what they do.
+**Q 1.4** Look at the source code for `adm.seed.sheep()` and `adm.apply.seed()` and describe what they do.
 
 Enter the following commands:
 ```{r, eval=FALSE}
@@ -88,6 +90,7 @@ s
 **Q 1.5** What is the meaning of the number returned in `s`?
 
 ## 2. The first generation of infection
+In this practical we are using a generational model, which only depends on spatial relationships rather than temporal, i.e., we do not need to worry about time. We are interested in characterizing the transmission of infection from one farm to another. The probability of transmission from one farm to another is called the transmission kernel, k(d). The spatial transmission kernel k(d) in this model is defined as the probability that an infectious farm in generation n infects a susceptible farm at distance d in generation n + 1. When defining a transmission, it is important to determine which parameters need to be included and values for those parameters. In the following lines of code we will generate parameter values and explore how different values affect the behavior of the transmission kernel.
 
 We will use the function `adm.sheep.params` to generate parameters of our model. Type the following commands in the `R` prompt:
 ```{r, eval=FALSE}
@@ -97,7 +100,8 @@ p2 <- adm.sheep.params()
 p2["power"] <- 3
 p2
 ```
-This is a generational model - we do not need to worry about time. The spatial transmission kernel k(d) in this model is defined as the probability that an infectious farm in generation n infects a susceptible farm at distance d in generation n + 1. The command `sapply(X,f)` applies the function f to each member of the vector X and returns a vector of the same length as X. Enter the following commands:
+
+The command `sapply(X,f)` applies the function f to each member of the vector X and returns a vector of the same length as X. Enter the following commands:
 ```{r, eval=FALSE}
 xvals <- (1:150)*100
 plot(xvals,p1["beta"]*sapply(xvals,adm.offset.kernel,p1),type="l",log="x")
@@ -113,8 +117,12 @@ farmdf$g_i <- -1
 table(farmdf$g_i)
 farmdf$g_i <- adm.apply.seed(s,farmdf)
 table(farmdf$g_i)
-system.time(for (i in 1:2) farmdf[,"g_i"] <- adm.apply.gen.model(p1,farmdf))
+system.time(
+  for (i in 1:2) 
+    farmdf[,"g_i"] <- adm.apply.gen.model(p1,farmdf)
+)
 ```
+
 **Q 2.2** Explain what you are doing with each command above (other than system.time, don't worry about that now). Note that the first two commands a not really necessary, but are included here because you need them next time you run the model. Note also that the last line takes a while to complete.
 
 Now enter the following commands:
@@ -124,7 +132,9 @@ adm.plot.gen(farmdf)
 ```
 
 **Q 2.3** What is your best guess for the basic reproductive number for this pathogen at the level of the farm?
+
 **Q 2.4** Do you ovserve exponential growth?
+
 **Q 2.5** How does the spatial nature of the process affect the crude time series of incidence?
 
 ## 3. Improving efficiency
@@ -148,6 +158,7 @@ system.time(
 )
 ```
 **Q 3.2** Explain the differences between these results and those of the previous runs.
+
 **Q 3.3** Look at the source code for the function `adm.apply.gen.model()`. Describe precisely in your own words how the function simulates the next generation of infections according to the specified kernel.
 
 ## 4. The first few generations
@@ -156,10 +167,9 @@ From here onwards, you will not be told what to type. By looking back at the pre
 
 (You need to think of the functions as apparatus and the computer processing cycles as your reagents: you need to design simulation experiments to generate evidence that will help you answer the questions. There is more than one way to answer the questions below.)
 
-**Q 4.1** Define a transmission kernel that causes only a small outbreak when seeded in the north east of the region but causes a large outbreak in the middle of the region.
+**Q 4.1** Define a transmission kernel that causes only a small outbreak when seeded in the north east of the region but causes a large outbreak when seeded in the middle of the region.
 
-**Q 4.2** By a process of trial and error (or otherwise) find values for the kernel
-parameters that make the kernel almost flat.
+**Q 4.2** By a process of trial and error (or otherwise) find values for the kernel parameters that make the kernel almost flat.
 
 **Q 4.3** Then find values of beta for the flat kernel that give approximately 10 cases in the first generation.
 
@@ -171,5 +181,4 @@ parameters that make the kernel almost flat.
 
 **Q 5.1** Based on your lectures, what other techniques are there for improving the efficiency of the simulation algorithm we have used today? How would you design the auxiliary data structures you need for such improvements? Design and implement a refinement of the function `adm.apply.gen.model()` that is even faster.
 
-**Q 5.2** Are there other aspects of this practical that you have found interesting?
-Suggest an interesting question to the demonstrator.
+**Q 5.2** Are there other aspects of this practical that you have found interesting? Suggest an interesting question to the demonstrator.
