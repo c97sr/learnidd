@@ -1,0 +1,225 @@
+---
+title: "Stochastic spatial simulation:"
+subtitle: "Scenario analysis for the arrival of a new sheep pathogen"
+author: "Steven Riley, Kylie Ainslie"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{spatial}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Objectives
+
+After successfully completing the practical, you will be able to:
+
+ * load and visualize spatial point data
+ * define a simple spatial seeding process
+ * describe precisely the naive algorithm for simulating the isotropic spatial transmission of an infectious agent amongst a population of stationary hosts
+ * understand how some calculations can be pre-cached to improve efficiency
+ * define a spatial transmission kernel that will die out in one location but cause
+   a large outbreak in another
+ * define a kernel that produces sub-expoential wave-like patterns of spread
+ * discuss the key trade-off that must be considered for spatially heterogeneous
+   vaccination campaigns
+
+## Format
+
+  **Timing** We have 2 hours to meet our objectives. However, I would expect people to progress at quite different rates depending on their familiarity with the concepts and their experience with R. At various points in time we will come together as a group to review answers and to discuss issues that arise. We will break for 15 minutes after 60 minutes and we will use the last 10 minutes to address any outstanding issues.
+
+  **Approach** Most of this practical should be completed in pairs. The demonstrator will help you to organise yourselves so that each pair has someone who is confident with R-based computation. The initial questions are very specific and are designed to help you familiarise yourself with the model and its implementation. As you move through the practical, the questions become more and more open-ended. The final questions are, really, suggestions for mini research projects that you can start today or pick up in your own time after the practical. You may want to break out of your pairs as you start to tackle the later questions.
+  
+  **R as a Tool** As mentioned before, this is not a course in R. However, R is a very useful tool to help you fully understand some of the more important concepts of infectious disease dynamics. At the very start of the session, the instructor will give an introduction to the functions we are using today. As you read through the R code, if you see a function `somefunction` that is not defined in the file `spatial_practical.R`, please type `?somefunction` to find out more about it.
+  
+## Background
+
+A new livestock disease has emerged in the northern Rhine area of Germany. Cases with clinical signs were noted during the late summer and early autumn of last year. No cases have yet been reported in the UK (remember, this scenario is hypothetical, and is about simulation). However, many ad hoc ecological analyses are underway in Germany and snippets of evidence keep emerging. 
+
+Prevailing weather conditions suggest that the most likely seeding scenario for the UK is a small cluster of farms on the coast of Kent. You have been provided with the detailed locations of 1501 farms thought to be most at-risk in the first few generations of infection, and asked to investigate likely initial patterns of spread. Please note, the data you have been provided with are based on the real density of sheep farms in the area, but the precise locations of individual farms in these data have been generated randomly.
+
+For each farm, you have only two fields: **easting** and **northing**. The former is the x location in metres and the latter is the y location. These 6-figure values form the standard coordinate system for the UK: if you ever need to tell someone exactly where you are, give them these 12 digits, with easting first, as your "grid reference".
+
+## 1. Setting up the system for simulation
+
+1. Open `R`, install the `learnidd` package from GitHub, and load the data set.
+```{r, message=FALSE}
+devtools::install_github("c97sr/learnidd", build_opts = c("--no-manual"), force = TRUE)
+library(learnidd)
+data("spatial_data")
+```
+2. Set up an answer document in Word and make sure you can copy and paste charts from R to Word.
+3. Prepare the simulation and plot easting by northing.
+```{r fig1, fig.height = 4, fig.width = 6, fig.align = "center"}
+farmdf <- adm.load.sheep.prep.sim()
+plot(farmdf$easting, farmdf$northing)
+```
+
+Note: the function `adm.load.sheep.prep.sim()` simply uses the original data set and adds two additional columns in preparation for the simulation.
+
+**Q 1.1** Copy the chart and describe it. Use [www.streetmap.co.uk](www.streetmap.co.uk) to see if you can match the (slightly fuzzy) shape to the coastline of Kent. On street map, the default coordinates at the bottom of the map window are in OS grid references.
+
+**Q 1.2** Enter the following commands and describe in words the changes in the chart you made for the previous question.
+
+$\color{red}{\textbf{Answer}}$ The above code identifies an area of potential farms where an outbreak might begin (seed) and plots them as read dots among the remaining farms.
+
+```{r fig2, eval=TRUE,echo=TRUE,fig.height = 4, fig.width = 6, fig.align = "center"}
+attach(farmdf)
+seedpts <- easting > 585000 & easting < 600000 & northing > 120000 & northing < 130000
+plot(farmdf$easting, farmdf$northing)
+points(easting[seedpts], northing[seedpts], pch=19, col="red")
+detach(farmdf)
+```
+
+The function `head()` gives the first 5 rows of a data frame. Type the following in the R prompt:
+```{r}
+head(farmdf)
+```
+
+**Q 1.3** Other than coordinates, what are the additional fields? What do you think they are used for?
+
+$\color{red}{\textbf{Answer}}$ An id column ('seqid'), which give each farm a unique identifier, and a generation time column ('g_i'), which will represent the generation time of each farm once we run the simulation. For now, the generation time column is just a place holder.
+
+To obtain the source code for any function in R, you just type the name of the function without the brackets (). Also, you can open the file spatial.R in the R editor and examine the source. Please **DO NOT** edit the source file!
+
+**Q 1.4** Look at the source code for `adm.seed.sheep()` and `adm.apply.seed()` and describe what they do.
+
+$\color{red}{\textbf{Answer}}$ `adm.seed.sheep()` subsets the innput data set based on the vector input in the `sdsq` option, generates a vector of randomly selected farm ids (the number specified in `nseed` option). `adm.apply.seed()` changes the generation time for the randomly selected farms from `adm.seed.sheep()` to the next generation time.
+
+Enter the following commands:
+```{r}
+seedbox <- c(585000,600000,120000,130000)
+s <- adm.seed.sheep(farmdf, 3, seedbox)
+s
+```
+
+**Q 1.5** What is the meaning of the number returned in `s`?
+
+$\color{red}{\textbf{Answer}}$ The ids of the randomly selected farms to seed the outbreak.
+
+## 2. The first generation of infection
+In this practical we are using a generational model, which only depends on spatial relationships rather than temporal, i.e., we do not need to worry about time. We are interested in characterizing the transmission of infection from one farm to another. The probability of transmission from one farm to another is called the transmission kernel, k(d). The spatial transmission kernel k(d) in this model is defined as the probability that an infectious farm in generation n infects a susceptible farm at distance d in generation n + 1. When defining a transmission, it is important to determine which parameters need to be included and values for those parameters. In the following lines of code we will generate parameter values and explore how different values affect the behavior of the transmission kernel.
+
+We will use the function `adm.sheep.params()` to generate parameters of our model. Type the following commands in the `R` prompt:
+```{r}
+p1 <- adm.sheep.params()
+p1
+p2 <- adm.sheep.params()
+p2["power"] <- 3
+p2
+```
+
+The command `sapply(X,f)` applies the function `f` to each member of the vector `xvals` and returns a vector of the same length as `xvals`. Enter the following commands:
+```{r fig3, fig.height = 4, fig.width = 6, fig.align = "center"}
+xvals <- (1:150)*100
+plot(xvals,p1["beta"]*sapply(xvals,adm.offset.kernel,p1),type="l",log="x")
+points(xvals,p2["beta"]*sapply(xvals,adm.offset.kernel,p2),type="l",col="red")
+```
+
+**Q 2.1** Using the results from above and results from similar commands, explain how the parameters offset, power, cutoff and beta affect the shape of the transmission kernel `adm.offset.kernel`. Copy multiple charts into your answer document that illustrate extreme scenarios.
+
+$\color{red}{\textbf{Answer}}$ **Offset** is the distance inside which there is homogeneous mixing. In other words it is the distance after which the transmission kernel is no longer flat. **Power** determines the curvature of the transmission kernel. **Cutoff** determines for what distances the transmission kernel (probability of infection) is $>0$. **Beta** determines the magnitude of the transmission kernel.
+
+The main simulation function `adm.apply.gen.model()` takes the data frame `farmdf` and simulates infection events for the next generation. Run the following R commands:
+```{r, eval=FALSE}
+table(farmdf$g_i)
+farmdf$g_i <- -1
+table(farmdf$g_i)
+farmdf$g_i <- adm.apply.seed(s,farmdf)
+table(farmdf$g_i)
+system.time(
+  for (i in 1:2) 
+    farmdf[,"g_i"] <- adm.apply.gen.model(p1,farmdf)
+)
+```
+**Q 2.2** Explain what you are doing with each command above (other than system.time, don't worry about that now). Note: the first two commands are not really necessary, but are included here because you need them next time you run the model. Also, that the last line takes a while to complete.
+
+Now enter the following commands:
+```{r fig4, fig.height = 4, fig.width = 6, fig.align = "center"}
+table(farmdf$g_i)
+adm.plot.gen(farmdf)
+```
+
+**Q 2.3** What is your best guess for the basic reproductive number for this pathogen at the level of the farm?
+
+$\color{red}{\textbf{Answer}}$ $<1$
+
+**Q 2.4** Do you observe exponential growth?
+
+$\color{red}{\textbf{Answer}}$ No.
+
+**Q 2.5** How does the spatial nature of the process affect the crude time series of incidence?
+
+$\color{red}{\textbf{Answer}}$ The spatial nature of the process limits the number of possible infectives in a given time point because only those farms that are a short distance away are realistically susceptible. Along the same lines, the spatial distance limits exactly which farms can be infected at a specific point in time. For eaxample, a farm at the southwest edge of the area will not get infected until a later time point if the outbreak starts in the center.
+
+## 3. Improving efficiency
+
+**Q 3.1** How do you think the computer is spending most of its time?
+
+$\color{red}{\textbf{Answer}}$ The computer is spending most of its time calculating the distance between every farm for each simulation run.
+
+Enter the following commands:
+```{r, eval=FALSE}
+dm <- adm.setup.aux.mat(farmdf)
+```
+
+It should take less than 3 minutes to complete. Now run the model again, but using the new object `dm` as an argument in the main simulation call.
+
+```{r, eval=FALSE}
+table(farmdf$g_i)
+farmdf$g_i <- -1
+table(farmdf$g_i)
+farmdf$g_i <- adm.apply.seed(s,farmdf)
+table(farmdf$g_i)
+system.time(
+  for (i in 1:2)
+    farmdf[,"g_i"] <- adm.apply.gen.model(p1,farmdf,distmatrix=dm)
+)
+```
+
+**Q 3.2** Explain the differences between these results and those of the previous runs.
+
+$\color{red}{\textbf{Answer}}$ In the first version, the distance matrix is computed for every iteration of the simulations, while in the second version, the distance matrix is computed only once prior to the first simulation used for each simulation.
+
+**Q 3.3** Look at the source code for the function `adm.apply.gen.model()`. Describe precisely in your own words how the function simulates the next generation of infections according to the specified kernel.
+
+$\color{red}{\textbf{Answer}}$ If the distance between an infected farm and a susceptible farm is less than the cutoff AND the probability of infection is greater than a randomly generated number then, the susceptible farm is infected. Specifically, the generation number (g_i) for the newly infected farm is changed from -1 to the value of the current generation.
+
+## 4. The first few generations
+
+From here onwards, you will not be told what to type. By looking back at the previous questions and by looking at the definition of the functions, you should be able to run the model yourself and be able to analyse the output. You can start to copy and paste from a text file (if you are not doing so already). Remember to reset all your farms to susceptible each time and to re-seed the outbreak. 
+
+(You need to think of the functions as apparatus and the computer processing cycles as your reagents: you need to design simulation experiments to generate evidence that will help you answer the questions. There is more than one way to answer the questions below.)
+
+**Q 4.1** Define a transmission kernel that causes only a small outbreak when seeded in the north east of the region but causes a large outbreak when seeded in the middle of the region. Note: you will need to seed two separate outbreaks.
+
+$\color{red}{\textbf{Answer}}$ The north east is a less dense area (fewer farms further apart), where as the middle is a more dense area (lots of farms in a small area). So, a transmission kernel that penalizes further distances will create a smaller outbreak in the north east and a larger outbreak in the middle. Such a transmission kernel can be achieved in a couple of ways:
+  1. increase the power
+  2. decrease the offset
+  3. decrease the cutoff
+
+**Q 4.2** By a process of trial and error (or otherwise) find values for the kernel parameters that make the kernel almost flat.
+
+$\color{red}{\textbf{Answer}}$ Power = 0 or offset = $\infty$ (or a massive number)
+
+**Q 4.3** Then find values of beta for the flat kernel that give approximately 10 cases in the first generation.
+
+$\color{red}{\textbf{Answer}}$ approx. 0.45, but may vary
+
+**Q 4.4** Keeping the other parameters equal to their default values, find a value for $\beta$ that gives an average of 10 cases in the first generation for a randomly chosen seed.
+
+$\color{red}{\textbf{Answer}}$ this will be a value larger than in the value of $\beta$ for the flat kernel
+
+**Q 4.5** Compare and contrast the two kernels from **Q 4.3** and **Q 4.4**. What features of the spatial processes lead to qualitatively different patterns.
+
+$\color{red}{\textbf{Answer}}$ In the model with a flat kernel, distance is essentially unimportant and the model behaves like homogeneous mixing. In this type of model the generations will be more random and spread out. In the model with a non-flat kernel, the spatial relationship between farms is important and the pattern of transmission are clearly move through adjacent space.
+
+## 5. Further questions
+
+**Q 5.1** Based on your lectures, what other techniques are there for improving the efficiency of the simulation algorithm we have used today? How would you design the auxiliary data structures you need for such improvements? Design and implement a refinement of the function `adm.apply.gen.model()` that is even faster.
+
+**Q 5.2** Are there other aspects of this practical that you have found interesting? Suggest an interesting question to the demonstrator.
