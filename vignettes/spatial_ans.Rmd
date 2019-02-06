@@ -47,8 +47,10 @@ For each farm, you have only two fields: **easting** and **northing**. The forme
 ## 1. Setting up the system for simulation
 
 1. Open `R`, install the `learnidd` package from GitHub, and load the data set.
-```{r, message=FALSE}
+```{r, eval=FALSE}
 devtools::install_github("c97sr/learnidd", build_opts = c("--no-manual"), force = TRUE)
+```
+```{r, message=FALSE}
 library(learnidd)
 data("spatial_data")
 ```
