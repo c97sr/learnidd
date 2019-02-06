@@ -1,0 +1,627 @@
+---
+title: "R Basics"
+author: "Ada Yan"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{basic_r}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+## Scripts and consoles
+
+A common practice for writing R code is to write the code in a script, and hit Run.  What this does is it sends the command to the console.  The same thing can be achieved by typing the code directly into the console.
+
+Saving all your command in a script is good practice because you have a record of the code you've run.
+But sometimes, other people have written functions that you want to use, and you don't want to change their script.
+So you can either open a new script, or directly run your commands in the console.
+
+## Different types of variables
+
+In R, we have different types of variables.
+
+```{r,eval = FALSE}
+x <- 3 # a single number
+x <- "abc" # a single "word" i.e. characters
+x <- TRUE # a logical: TRUE or FALSE
+```
+
+In each case above, the variable `x` is a scalar, i.e. the is only one value.
+R can store multiple things as vectors, matrices, lists or data frames.
+
+```{r}
+my_vector <- c(1,3,4) # a vector of numbers
+my_named_vector <- c(a = 1, b = 3, c = 4) # a named vector of numbers
+my_matrix <- matrix(c(1,2,3,4), nrow = 2) # a matrix
+my_list <- list(1, c(3, 4)) # a list
+my_named_list <- list(apple = 1, orange = c(3,4), banana = "abc") # a named list
+my_df <- data.frame(name = c("John", "Mary", "Anne"), 
+                time = c(1,3,5), 
+                viral_load = c(3,4,6), 
+                sex = c("M", "F", "F")) # a data frame
+```
+
+Different types of variables are useful for different things.
+
+* Vectors are useful for storing many of the same thing (e.g. many numbers, many characters...).  Each entry can be named or unnamed.
+* Matrices are basically a 2d version of vectors.  Instead of naming each element, you can name each row/column.
+* Lists can be used to store many different things.  In the example above, `x$apple` is a single number, `x$orange` is a numeric vector, and `x$banana` is a single character string.  The elements of a list can be named or unnamed.
+* Data frames can be used to store many different things in columns.  Each column must have the same number of rows, and contain one type of object only (e.g. all numbers or all characters).  The rows and columns of data frames can be named.
+
+### Extracting elements from different types of variables
+
+Some examples: (throughout this guide, output is denoted with `##`).
+```{r}
+my_vector[1]
+my_vector[c(1,2)]
+my_named_vector[1]
+my_matrix[1,2]
+my_matrix[,2]
+my_list[[1]] # Note: my_list[1] with single brackets gives you a list of length 1
+# rather than the item on the list, which is probably not what we want
+my_list[c(1,2)] # in this case, we want the output to be a list of two things, so we use single brackets
+
+my_named_list[[1]] 
+my_df[1,2]
+my_df[1,]
+```
+
+Named elements can be extracted by name:
+
+```{r}
+my_named_vector["a"]
+my_named_list[["apple"]]
+my_named_list[c("apple", "orange")]
+my_named_list$apple # shorthand for my_named_list[["apple"]], but only works for a single element
+my_df[,c("name", "sex")]
+my_df$name # shorthand for my_df[,"name"], but only works for one column
+```
+
+## Functions
+
+### Inputs and outputs
+
+A function is a thing that takes input(s), does some computation, and returns output(s).
+Inputs of a function are also known as arguments.
+R has many built-in functions.
+For example,
+
+```{r}
+exp(3)
+```
+
+takes a single number as an input, exponentiates it, and returns the exponentiated value as an output.
+You can use a variable as a function input.  For example,
+
+```{r}
+x <- 3
+exp(x)
+```
+does the same thing as before.
+
+Functions can take many arguments.
+For example, `runif` is an inbuilt function for generating numbers from a uniform distribution.  `runif` has three arguments: `n`, how many random umbers to generate; `min`, the lower bound of the uniform distribution; and `max`, the upper bound of the uniform distribution.
+So
+
+```{r}
+runif(10, 2, 5)
+```
+generates 10 numbers between 2 and 5.
+
+Running a function for some given value(s) is also known as calling a function.
+You can call a function with the names of its arguments.
+For example, `runif(n = 10, min = 2, max = 5)` does the same thing as `runif(10, 2, 5)`.  The advantage of using named arguments is that you don't have to remember the order of the arguments.  For example, `runif(max = 5, min = 2, n = 10)` does the same thing as `runif(n = 10, min = 2, max = 5)` does the same thing as `runif(10, 2, 5)`, but `runif(5, 2, 10)` is `runif(n = 5, min = 2, max = 10)`.
+
+Functions can have things other than numbers as arguments.
+For example,
+
+```{r}
+paste0("ac", "bd")
+```
+
+takes two character strings as input, sticks them together, and returns a single character string as output.
+
+```{r}
+mean(c(1, 3, 4))
+```
+
+takes a vector of numbers as input, computes the mean, and returns it as a single number.
+
+### Writing custom functions
+
+We can write our own functions.
+Every function has the same basic structure:
+
+```{r, eval = FALSE}
+function_name <- function(inputs) {
+  computation
+  output
+}
+```
+
+For example, 
+```{r}
+my_function <- function(x) {
+  y <- x + 1
+  y
+}
+```
+
+is a function called `my_function`; it has a single input, `x`; adds 1; and returns the result.
+Note that unless the `return` function is used, a function returns what is on the last line within the curly brackets.
+So we can use the function:
+
+```{r}
+my_function(1)
+```
+or
+```{r}
+x <- 1
+my_function(x)
+```
+
+We can write a function with more than one argument.
+For example, `my_add` has two arguments, `x` and `y`.  It adds them together and returns the result.
+
+```{r}
+my_add <- function(x, y) {
+x + y
+}
+my_add(5.5, 7)
+```
+
+Changing the name of a function input doesn't change anything.  For example,
+
+```{r, eval = FALSE}
+my_function <- function(x) {
+  y <- x + 1
+  y
+}
+```
+does the same thing as
+```{r, eval = FALSE}
+my_function <- function(z) {
+  y <- z + 1
+  y
+}
+```
+
+We can do many computations inside a function.
+
+For example, `complicated` takes a number, adds 3, divides it by 5, multiplies it by 4, and returns the result.
+The important thing to remember is that the function returns what's on the last line.
+
+```{r}
+complicated <- function(x) {
+y <- x + 3
+z <- y / 5
+w <- z * 4
+w
+}
+complicated(7)
+```
+
+Let's have a function whose argument is not a single number, but a vector of numbers.
+For example, `product3` takes a vector of numbers, and multiplies the first three entries together.
+
+```{r}
+product3 <- function(x) {
+x[1] * x[2] * x[3]
+}
+product3(c(4,5,6,7))
+```
+
+A similar function could be written with three arguments, but then the argments are three separate numbers rather than a vector of numbers.
+
+```{r}
+product3a <- function(x1, x2, x3) {
+x1 * x2 * x3
+}
+product3a(4, 5, 6)
+```
+
+Sometimes you want a function to return more than one thing.  For example, in the `complicated` function above, we might want to know the values of both `z` and `w`.  In R, to return more than one output, we need to put them in a list.
+So we would have
+
+```{r}
+complicated <- function(x) {
+y <- x + 3
+z <- y / 5
+w <- z * 4
+list(w, z)
+}
+complicated(7)
+```
+
+To keep track of what the outputs are, we can name them:
+```{r}
+complicated <- function(x) {
+y <- x + 3
+z <- y / 5
+w <- z * 4
+list(w = w, z = z)
+}
+complicated(7)
+```
+
+To get each output separately, we would write
+
+```{r}
+output <- complicated(7)
+output$w
+output$z
+```
+
+### Example function from the transmission practical
+
+We will now go through a function from the transmission practical.
+```{r}
+f.incub <- function(d, m.incub) {
+# We assume that the incubation period has an exponential distribution
+return( exp(-d / m.incub) / m.incub )
+}
+```
+
+`f.incub` is a simplified version of the function used in the practical.
+It calculates the probabilidy density function for someone having an incubation period `d`, given that the mean incubation period across the population is `m.incub`.
+It has two inputs, `d` and `m.incub`, and one output, whcih is the probability density.
+For example,
+```{r}
+f.incub(1, 4)
+```
+calculates the probability density of someone having an incubation period of 1 day, given that the mean incubation period across the population is 4 days.
+
+The actual function in the practical was
+```{r}
+f.incub <- function(d, p) {
+# We assume that the incubation period has an exponential distribution
+return( exp(-d / p[["m.incub"]]) / p[["m.incub"]] )
+}
+```
+
+Here, instead of just a number, `p` is a named vector of parameter values.
+`p[["m.incub"]]` is the element of `p` which is named `m.incub`.
+You would use this version of `f.incub` as follows:
+
+```{r}
+p <- c("m.incub" = 4, "beta" = 3, "m.inf" = 1)
+d <- 1
+f.incub(d, p)
+```
+
+This formulation of `f.incub` is handy because you can store all your parameters in one vector, and refer to them by name.
+Note that the function will run as long as `p` has an element called `m.incub`.
+So the minimal example would be
+```{r}
+p <- c("m.incub" = 4)
+f.incub(d, p)
+```
+
+## Loops
+
+We use loops when we want to do the same thing many times.
+
+### For loops
+
+We use for loops when we want to do something over a range of values which we already know.
+A basic example is as follows.
+
+```{r}
+for(i in c(1,3,5)) {
+print(i + 1)
+}
+```
+
+Every for loop has a similar structure.
+We define a variable `i` which we iterate over.
+We then run the stuff in the curly brackets for every value of `i`.
+
+For loops can be confusing as first because it doesn't look like we define what `i` is.
+But effectively we're defining `i` at the top each time we run the loop.
+So we can get the same result as above using
+
+```{r}
+i <- 1
+print(i + 1)
+i <- 3
+print(i + 1)
+i <- 5
+print(i + 1)
+```
+
+Everything that can be done with a loop can be done with lots of typing, as demonstrated above.
+But loops are useful because sometimes you want to do something a very large number of times, and it's impractical to type it all out.
+It also helps avoid typos.
+
+We can use loops to change the state of variables.
+For example, in this loop, `x` first takes the value 2, then 4, then 6.
+
+```{r}
+for(i in c(1,3,5)) {
+  x <- i + 1
+  print(x)
+}
+```
+
+One way this is useful is for storing the results of all iterations of a for loop.
+For example, in the following loop, the `i`th result is stored as the `i`th element of `x`.
+```{r}
+vec <- 0 # initialise vector
+for(i in 1:3) {
+  vec[i] <- i + 1
+}
+vec
+```
+(`1:3` is shorthand for `c(1, 2, 3)`.)
+
+Caution: note what happens if we run the following.
+
+```{r}
+vec <- 0 # initialise vector
+for(i in c(1, 3, 5)) {
+  vec[i] <- i + 1
+}
+vec
+```
+Here, because `i` takes the values `1`, `3` and `5`, the results end up being stored as the 1st, 3rd and 5th entries of the vector, which might not be what we want.
+If we want the result of each iteration to be stored consecutively, we would run
+
+```{r}
+vec <- 0
+values <- c(1, 3, 5)
+for(i in 1:length(values)) {
+  vec[i] <- values[i] + 1
+}
+vec
+```
+
+Another way changing the states of variables in a loop is useful is that you can do iterative computations.
+For example, the following loop adds `i` to the previous value of `x`, and the additions accumulate.
+An example from the practical is MCMC, where each iteration is based on the value from the previous iteration.
+```{r}
+x <- 0
+for(i in c(1,3,5)) {
+x <- x + i
+print(x)
+}
+```
+
+Each column of a data frame is just a vector.  So we can iterate over all of the values in a column.
+
+```{r}
+my_df <- data.frame(name = c("John", "Mary", "Anne"), 
+                time = c(1,3,5), 
+                viral_load = c(3,4,6), 
+                sex = c("M", "F", "F")) # a data frame
+for(i in my_df$viral_load) {
+  symptoms <- i + 2 # in this toy example, the symptom score is the viral load + 2
+  print(symptoms)
+}
+```
+
+We can also iterate over all values in a matrix column.
+
+```{r}
+my_matrix <- matrix(c(1,2,3,4), nrow = 2) # a matrix
+for(i in my_matrix[,2]) {
+  print(i + 1)
+}
+```
+
+We can put functions in for loops, and vice versa.
+An example of putting a function in a for loop:
+
+```{r}
+complicated <- function(x) {
+y <- x + 3
+z <- y / 5
+w <- z * 4
+w
+}
+
+for(i in c(1, 3, 5)) {
+  print(complicated(i))
+}
+
+```
+
+Using functions in a loop can keep the loop from getting too long.
+
+## If statements
+
+If statements can be used in isolation.
+For example,
+
+```{r}
+x <- 0
+y <- 3
+if(y < 4) {
+  x <- 2
+}
+x
+```
+
+In the above code, we check if the statement in the round brackets (also known as the condition) is true.
+If it's true, we do the thing in the curly brackets.
+In this case, `y < 4`, so the value of `x` is changed from 0 to 2.
+
+If statements don't do anything if the condition is false.
+For example,
+
+```{r}
+x <- 0
+y <- 5
+if(y < 4) {
+  x <- 2
+}
+x
+```
+
+`x` stays the same value because the condition is false.
+If we want to do something else if the condition is false, use `if` together with `else`.
+
+```{r}
+x <- 0
+y <- 5
+if(y < 4) {
+  x <- 2
+} else {
+  x <- 5
+}
+x
+```
+
+`if` and `else` statements can be strung together.
+
+```{r}
+x <- 0
+y <- 3
+if(y < 4) {
+  x <- 2
+} else if(y < 6) {
+  x <- 5
+} else {
+  x <- 7
+}
+x
+```
+
+```{r}
+x <- 0
+y <- 5
+if(y < 4) {
+  x <- 2
+} else if(y < 6) {
+  x <- 5
+} else {
+  x <- 7
+}
+x
+```
+
+```{r}
+x <- 0
+y <- 8
+if(y < 4) {
+  x <- 2
+} else if(y < 6) {
+  x <- 5
+} else {
+  x <- 7
+}
+x
+```
+
+In the first case, we reach the first condition; it's true; so we run what's in the first set of curly brackets.
+In the second case, we reach the first condition; it's false.
+So we continue to the second condition, which is true, and run what's in the second set of curly brackets.
+And so forth.
+
+### If statements in functions, with return
+
+If we don't want a function to return what's on the last line, we can use `return` to stop the computation early.
+This is useful to check if your inputs are sensible before doing a long calculation.
+
+For example,
+```{r}
+numeric_function <- function(x) {
+if(!is.numeric(x)){
+return(NA)
+} else {
+y <- x + 3
+z <- y / 5
+w <- z * 4
+}
+w
+}
+numeric_function(7)
+numeric_function("abc")
+```
+
+`numeric_function` is deisgned to take a number as an input.
+So we use `if` to check whether we have in fact inputted a number.
+If we have not inputted a number (so `!is.numeric(x)` is `TRUE`), it returns NA.
+Otherwise, the rest of the function continues normally.
+Note that `!` negates a logical statement.
+For example, `!(x < 3)` returns the same result as `x >= 3`.
+
+If what you want to return is on the last line, you don't have to write `return`, but some people do so anyway to make it extra clear what the function is returning.
+
+## Misc notes
+
+### Subsetting a data frame based on the type of column
+
+```{r}
+my_df <- data.frame(name = c("John", "Mary", "Anne"), 
+                time = c(1,3,5), 
+                viral_load = c(3,4,6), 
+                sex = c("M", "F", "F")) # a data frame
+my_df
+```
+
+Say we want to extract only the numeric columns.
+We can do this using a for loop.
+
+```{r}
+vec <- TRUE # initialise a vector to keep track of what's numeric and what's not
+for(i in 1:ncol(my_df)) {
+if(is.numeric(my_df[,i])) {
+vec[i] <- TRUE
+} else {
+vec[i] <- FALSE
+}
+}
+vec
+my_df <- my_df[,vec] # keeps the columns where vec is TRUE and discards the columns where vec is FALSE
+my_df
+```
+
+### While loops
+
+`while` loops are similar to `for` loops, but instead of iterating over a set of fixed values, you keep doing what's in the curly brackets until the condition is violated.
+For example,
+
+```{r}
+x <- 5
+while(x > 0) {
+  x <- x - 1
+  print(x)
+}
+```
+The `while` loop keeps running until the condition is breached, in this case when `x` reaches 0.
+
+`while` loops are useful when you don't know beforehand how many iterations you need.
+For example, a silly model of infection:
+
+```{r}
+S <- 5
+I <- 1
+R <- 0
+while(I > 0 & S > 0) { # run simulation until we run out of susceptibles or infectious
+new_infections <- 1
+R <- R + I
+I <- new_infections
+S <- S - I
+}
+S
+I
+R
+```
+
+We don't know beforehand how many generations of infection there will be, so a `while` loop is useful.
+Caution: if we accidentally write a `while` loop where the condition is never violated, the loop will keep running forever (until we hit the stop button).
+
+### All, any, which
+
+```{r}
+my_df <- data.frame(name = c("John", "Mary", "Anne"), 
+                time = c(1,3,5), 
+                viral_load = c(3,4,6), 
+                sex = c("M", "F", "F")) # a data frame
+my_df
+my_df$viral_load < 5 # prints TRUE or FALSE depending on if the row's viral load is less than 4
+which(my_df$viral_load < 5) # prints the incides of TRUE above
+all(my_df$viral_load < 5) # returns TRUE only if all viral loads are less than 5
+any(my_df$viral_load < 5) # returns TRUE if any viral loads are less than 5
+```
