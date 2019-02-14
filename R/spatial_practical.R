@@ -182,9 +182,9 @@ adm.plot.gen <- function(datf,gens=c(0,1,2,3),cols=c("red","blue","green","orang
 #' @export
 
 adm.sheep.params <- function() {
-	rtn <- c(	offset=1000,
-				power=2,
-				cutoff=10000,
-				beta=0.05)
+	rtn <- c(	offset=1000,#a
+				power=2,#p
+				cutoff=10000,#c
+				beta=0.05)#beta
 	rtn
 }
