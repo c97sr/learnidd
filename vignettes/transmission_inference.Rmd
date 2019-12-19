@@ -265,46 +265,48 @@ The log-likelihood is
 
 $$LL = \sum_i \log(f_{incub} (d_i \mid  m_{incub}))$$
 
-**Qu. 3.1** The below function to return the contribution of each cluster to the log-likelihood is partially written.  Complete the function.
+The log likelihood for our model is calculated by the function `calculateLogLikCluster_incubation`:
 
-```{r eval = FALSE}
-calculateLogLikCluster_incubation <- function(p, data)	{ #returns contribution of cluster to log-likelihood
-LL<-log(XXXXX) 	#incubation period of donor 	#You need to replace �XXXXX� by appropriate expression
-return(LL)
-}
-```
-
-```{r include = show_ans, echo = FALSE}
+```{r}
 calculateLogLikCluster_incubation
 ```
 
-**Qu. 3.2** Look at the structure of the MCMC algorithm. Compare it with the one that was presented in the lecture. Do they match? Do you understand how the algorithm works?
+**Qu. 3.1** (bonus) Look at the structure of the MCMC algorithm. Compare it with the one that was presented in the lecture. Do they match? Do you understand how the algorithm works?
 
 <span style="color:blue">`r if(show_ans){"The two algorithms are pretty much equivalent. The main difference is that the R code uses log likelihoods and a log proposal ratio. We therefore add/subtract log values rather than multiplying/dividing as in the slides. This is also reflected in the line log(runif(1)), where we compare the acceptance ratio to the log of a random number between 0 and 1 to decide whether or not to accept the proposed move. Working in log space is computationally easier and more accurate when working with very small probabilities."}`</span>
 
-**Qu. 3.3** Run the MCMC algorithm for a small number of iterations (e.g. 200). Tune the standard deviation of the random walk `randomWalkSD` so that the acceptance rate `acceptance_rate` is about 20\%. Run the MCMC algorithm for a larger number of iterations (e.g. 1000 or 2000).
-The code to run the MCMC algorithm for 200 iterations with a random walk standard deviation of 0.5 is given below.
+**Qu. 3.2** Run the MCMC algorithm.  Plot the output of the MCMC. How long does it take for the chain to converge? 
 
-```{r eval = FALSE}
+```{r eval = show_ans}
 mcmc_results <- run_MCMC(fit_parnames = "m.incub",
-                         nbIteration = 200,
-                         randomWalkSD = 0.5,
+                         nbIteration = 1000,
+                         randomWalkSD = 0.4,
                          currentParameter = c(m.incub = 1.5),
                          data = donor_recipient_data)
 storedParameter <- mcmc_results$storedParameter
 logLik <- mcmc_results$logLik
 acceptance_rate <- mcmc_results$acceptance_rate
 ```
+```{r eval = FALSE}
+for(parID in 1:ncol(storedParameter)) {
+  dev.new()
+  plot(storedParameter[,parID],type="l")
+} # note that because we only have one parameter in this example, we didn't actually need the for loop -- could have done plot(storedParameter[,1],type="l")
+```
+```{r eval = show_ans, echo = FALSE}
+for(parID in 1:ncol(storedParameter)) {
+  plot(storedParameter[,parID],type="l")
+} 
+```
+```{r eval = FALSE}
+  dev.new()
+  plot(logLik,type="l",main="logLik")
+```
+```{r eval = show_ans, echo = FALSE}
+plot(logLik,type="l",main="logLik")
+```
 
-<span style="color:blue">`r if(show_ans){"The acceptance rate is a useful measure of how efficiently the random walk is moving around probability space, and therefore how efficiently it is sampling from the posterior distribution. If the acceptance rate is low, then a lot of proposed moves are being rejected. This is because too many of the proposed values for the parameters result in poor likelihoods and are rejected. In this case, the MCMC chain does not move around parameter space very often and therefore takes a long time to sample from the posterior."}`</span>
-
-<span style="color:blue">`r if(show_ans){"If the acceptance rate is high, then most of the proposed moves are accepted. This is because most of the proposed values for theta are near the current position, and the chain therefore slowly moves around the high-density region of the posterior.  This will result in a very slow walk around the space of possible parameter values, as many proposals would need to be accepted in a row to move to a different region of parameter space."}`</span>
-
-<span style="color:blue">`r if(show_ans){"The acceptance rate is decreased by increasing the standard deviation of the random walk, and vice versa."}`</span>
-
-<span style="color:blue">`r if(show_ans){"A value of randomWalkSD = 0.4 gives an acceptance rate of 0.19 (results may vary due to stochasticity of the algorithm)."}`</span>
-
-**Qu. 3.4** Plot the output of the MCMC. How long does it take for the chain to converge? Define the burn in accordingly (the burn in is the number of iterations one needs to drop at the beginning of the chain).
+Define the burn in accordingly (the burn in is the number of iterations one needs to drop at the beginning of the chain).
 The code for a burn-in of one iteration is given below.
 
 ```{r eval = FALSE}
@@ -328,22 +330,9 @@ plot(logLik,type="l",main="logLik")
 <span style="color:blue">`r if(show_ans){"However, the idea of discarding a “burn in” period is not clear cut, as even the burn in samples are samples from the posterior distribution. If interested, have a quick browse of the following:
 http://users.stat.umn.edu/~geyer/mcmc/burn.html"}`</span>
 
-```{r include = show_ans}
-mcmc_results <- run_MCMC(fit_parnames = "m.incub",
-                         nbIteration = 1000,
-                         randomWalkSD = 0.4,
-                         currentParameter = c(m.incub = 1.5),
-                         data = donor_recipient_data)
-storedParameter <- mcmc_results$storedParameter
-logLik <- mcmc_results$logLik
-acceptance_rate <- mcmc_results$acceptance_rate
-
-plot(logLik,type="l",main="logLik")
-```
-
 <span style="color:blue">`r if(show_ans){"Based on the above graph, the MCMC chain has converged by 100 iterations, so I choose a burn-in of 100 iterations."}`</span>
 
-```{r include = show_ans}
+```{r eval = show_ans, include = show_ans}
 burnIn <- 100
 storedParameter <- storedParameter[-(1:burnIn), , drop = FALSE]
 logLik <- logLik[-(1:burnIn)]
@@ -355,13 +344,31 @@ for(parID in 1:ncol(storedParameter)) {
 plot(logLik,type="l",main="logLik")
 ```
 
-**Qu. 3.5** Give the posterior mean, median, 2.5% and 97.5% percentiles of the posterior distribution.
+**Qu. 3.3** Plot the samples from the posterior distribution as a histogram.
 
-```{r include = show_ans}
+```{r eval = show_ans, include = show_ans}
+for(parID in 1:ncol(storedParameter)) {
+  hist(storedParameter[,parID])
+}
+```
+
+**Qu. 3.4** Give the posterior mean, median, 2.5% and 97.5% percentiles of the posterior distribution.
+
+```{r eval = show_ans, include = show_ans}
 mean(storedParameter)
 median(storedParameter)
 quantile(storedParameter, prob = c(0.025, 0.975))
 ```
+
+**Qu. 3.5** (bonus) What happens to the acceptance rate when you run the algorithm with different values of the standard deviation of the random walk, `randomWalkSD`?
+
+<span style="color:blue">`r if(show_ans){"The acceptance rate is a useful measure of how efficiently the random walk is moving around probability space, and therefore how efficiently it is sampling from the posterior distribution. If the acceptance rate is low, then a lot of proposed moves are being rejected. This is because too many of the proposed values for the parameters result in poor likelihoods and are rejected. In this case, the MCMC chain does not move around parameter space very often and therefore takes a long time to sample from the posterior."}`</span>
+
+<span style="color:blue">`r if(show_ans){"If the acceptance rate is high, then most of the proposed moves are accepted. This is because most of the proposed values for theta are near the current position, and the chain therefore slowly moves around the high-density region of the posterior.  This will result in a very slow walk around the space of possible parameter values, as many proposals would need to be accepted in a row to move to a different region of parameter space."}`</span>
+
+<span style="color:blue">`r if(show_ans){"The acceptance rate is decreased by increasing the standard deviation of the random walk, and vice versa."}`</span>
+
+<span style="color:blue">`r if(show_ans){"A value of randomWalkSD = 0.4 gives an acceptance rate of 0.19 (results may vary due to stochasticity of the algorithm)."}`</span>
 
 ## Part 4: Modelling transmission
 
@@ -446,7 +453,7 @@ S(1000, param2)
 
 You are now going to use data augmentation techniques to estimate the 3 parameters of our transmission model.
 
-To start the MCMC alogirthm with data augmentation, initial values need to be chosen for the augmented data.  Look at the code for `run_MCMC_DA` to find the function to generate augmented data.
+To start the MCMC algorithm with data augmentation, initial values need to be chosen for the augmented data.  Look at the code for `run_MCMC_DA` to find the function to generate augmented data.
 
 ```{r include = show_ans, eval = FALSE}
 donor_recipient_data <- t(apply(donor_recipient_data, 1, augment_data)) # (near the start)
@@ -471,33 +478,19 @@ We have seen in the lecture that the likelihood is made of the following compone
 * The contribution of a recipient $i$ that was infected at time $t_i$ and had symptom onset at time $d_i$ is $S(t_i) h(t_i) f_{incub}(d_i - t_i)$ where the 3 terms are the probability to survive infection up to time $t_i$, the hazard of infection at time $t_i$ and the density of the incubation period $d_i - t_i$, respectively.
 * The contribution of a recipient that was not infected throughout the experiment is $S(\infty)$, that we approximate by $S(1000)$.
 
-**Qu. 5.2** The function `calculateLogLikCluster_transmission` is given below. Can you find the contributions of the different types of individuals in the code?  Check your answers by looking at the source code for the function, by typing `calculateLogLikCluster_transmission`.
+**Qu. 5.2** Look at the source code for `calculateLogLikCluster_transmission` by typing `calculateLogLikCluster_transmission`. Can you find the contributions of the different types of individuals in the code?
 
-```{r eval = FALSE}
-calculateLogLikCluster_transmission <- function(p, data) {
-  LL<-log(f.incub(data[["time.onset.donor"]],p))
-  if(data[["recipient.infected"]]==1) {
-    LL<-LL+log(S(data[["time.infection.recipient"]],p)) +
-      log(h(data[["time.infection.recipient"]],p)) +
-      log(f.incub(data[["time.onset.recipient"]]-data[["time.infection.recipient"]],p))
-  } else  {
-    LL<-LL+log(S(1000,p))
-  }
-  return(LL)
-}
-```
-
-```{r include = show_ans, echo = FALSE}
+```{r include = show_ans}
 calculateLogLikCluster_transmission
 ```
 
-The MCMC algorithm of Part 3 has been modified to be able to handle the times of infection as augmented data. Look at the changes that were made.
+The MCMC algorithm of Part 3 has been modified to be able to handle the times of infection as augmented data. At each MCMC iteration, we propose new infection times for each recipient from a uniform distribution, once again using the `augment_data` function.
 
-**Qu. 5.3** How are the times of infection updated? Explain why the log ratio of proposals, i.e. the value given by `logRatioProposal_DA`, is 0.
+**Qu. 5.3** (bonus) Identify the differences between the code for `run_MCMC` and `run_MCMC_DA`.  Explain why the log ratio of proposals, i.e. the value given by `logRatioProposal_DA`, is 0.
 
-<span style="color:blue">`r if(show_ans){"We propose new infection times for each recipient from a uniform distribution. The log ratio of proposals is null because the proposal probabilities are symmetric (the q terms in the MCMC algorithm cancel out between the top and bottom). This is because of there is an equal probability of proposing any value for the infection time given any current value for infection time."}`</span>
+<span style="color:blue">`r if(show_ans){"The log ratio of proposals is null because the proposal probabilities are symmetric (the q terms in the MCMC algorithm cancel out between the top and bottom). This is because of there is an equal probability of proposing any value for the infection time given any current value for infection time."}`</span>
 
-**Qu. 5.4** When we update the time of infection in a cluster, we only calculate the likelihood for that cluster, not for the whole dataset. Do you understand why?
+**Qu. 5.4**  (bonus) When we update the time of infection in a cluster, we only calculate the likelihood for that cluster, not for the whole dataset. Do you understand why?
 
 <span style="color:blue">`r if(show_ans){"Each cluster is independent, and the infection times in each cluster only apply to that cluster. The model parameters, theta, apply to all of the clusters, and we therefore need to calculate the acceptance probability based on the change in likelihood summed across all clusters. For the infection times, each update only applies to the likelihood for that cluster, and we can therefore carry out the proposal/acceptance step for the cluster on its own.  We would get the same solution if we re-evaluated the likelihood for the whole dataset, but it would be computationally wasteful."}`</span>
 
@@ -513,14 +506,12 @@ mcmc_results <- run_MCMC_DA(fit_parnames = c("m.incub", "beta", "m.inf"),
                             data = donor_recipient_data)
 storedParameter <- mcmc_results$storedParameter
 logLik <- mcmc_results$logLik
-acceptance_rate_parameters <- mcmc_results$acceptance_rate_parameters
-acceptance_rate_DA <- mcmc_results$acceptance_rate_DA
 ```
 
 **Qu. 5.5** Plot the MCMC output. Assess convergence and define burn in. Give the posterior mean and 95\% credible interval of parameters.
 
 
-```{r include = show_ans}
+```{r eval = show_ans, include = show_ans}
 for(parID in 1:ncol(storedParameter))  {
   plot(storedParameter[,parID],type="l")
 }
@@ -533,7 +524,7 @@ plot(logLik,type="l",main="logLik")
 
 <span style="color:blue">`r if(show_ans){"For the purposes of analysis, we treat the output vectors of the MCMC run (the storedParameter data frame) as a set of samples from the posterior distribution. This is analogous to the idea that running runif(100, 0, 1) gives 100 samples from a uniform distribution with A=0 and B=1."}`</span>
 
-```{r include = show_ans}
+```{r eval = show_ans, include = show_ans}
 burnIn <- 100
 storedParameter <- storedParameter[-(1:burnIn), , drop = FALSE]
 logLik <- logLik[-(1:burnIn)]
@@ -542,13 +533,19 @@ apply(storedParameter, 2, mean)
 apply(storedParameter, 2, quantile, prob = c(0.025, 0.975))
 ```
 
+```{r eval = show_ans, include = show_ans}
+for(parID in 1:ncol(storedParameter)) {
+  hist(storedParameter[,parID])
+}
+```
+
 ## Part 6: Further analysis of samples from the posterior distribution
 
 Install the CODA R package with the command `install.packages("coda")`. You can load the R package with the command `library(coda)` and see all available functions with `library(help="coda")`.
 
 **Qu. 6.1** Convert the MCMC output into an MCMC object of the CODA package with `storedParameter.mcmc <- mcmc(storedParameter)`. Plot the MCMC object.
 
-```{r include = show_ans, fig.width = 6, fig.height = 10}
+```{r eval = show_ans, include = show_ans, fig.width = 6, fig.height = 10}
 library(coda)
 storedParameter.mcmc <- mcmc(storedParameter)
 plot(storedParameter.mcmc)
@@ -558,11 +555,11 @@ plot(storedParameter.mcmc)
 
 **Qu. 6.2**: Find the CODA function to plot that sample autocorrelation in the MCMC chains, and plot the sample autocorrelations. What is the sample autocorrelation between every 5th value?
 
-```{r include = show_ans, fig.width = 6, fig.height = 10}
+```{r eval = show_ans, include = show_ans, fig.width = 6, fig.height = 10}
 autocorr.plot(storedParameter.mcmc)
 ```
 
-```{r include = show_ans}
+```{r eval = show_ans, include = show_ans}
 autocorr.diag(storedParameter.mcmc)
 ```
 
@@ -570,7 +567,7 @@ autocorr.diag(storedParameter.mcmc)
 
 **Qu. 6.3**: Find the function to compute the effective sample size of the MCMC chains, and compute the effective sample size. Why is the effective sample size smaller than 2000? What does that mean for assessing the MCMC output?
 
-```{r include = show_ans}
+```{r eval = show_ans, include = show_ans}
 effectiveSize(storedParameter.mcmc)
 ```
 
@@ -580,7 +577,7 @@ A rough guide to “how big is big enough” for effective sample size is to aim
 
 **Qu. 6.4**: Thin the MCMC chains with the command `storedParameter.mcmc.thinned <- mcmc(storedParameter[seq(1,nrow(storedParameter),10),])` and analyse the MCMC output again.
 
-```{r include = show_ans, fig.width = 6, fig.height = 10}
+```{r eval = show_ans, include = show_ans, fig.width = 6, fig.height = 10}
 storedParameter.mcmc.thinned <- mcmc(storedParameter[seq(1,nrow(storedParameter),10),])
 plot(storedParameter.mcmc.thinned)
 autocorr.plot(storedParameter.mcmc.thinned)
