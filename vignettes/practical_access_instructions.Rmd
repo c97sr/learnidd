@@ -3,6 +3,9 @@ title: "Instructions for accessing the practicals"
 date: "`r Sys.Date()`"
 output: html_document
 ---
+
+This instruction sheet can be viewed at https://github.com/c97sr/learnidd/blob/master/vignettes/practical_access_instructions.md
+
 # Steps
 1. Install Rtools from the website https://cran.r-project.org/bin/windows/Rtools/
 
