@@ -90,7 +90,7 @@ s
 **Q 1.5** What is the meaning of the number returned in `s`?
 
 ## 2. The first generation of infection
-In this practical we are using a generational model, which only depends on spatial relationships rather than temporal, i.e., we do not need to worry about time. We are interested in characterizing the transmission of infection from one farm to another. The probability of transmission from one farm to another is called the transmission kernel, k(d). The spatial transmission kernel k(d) in this model is defined as the probability that an infectious farm in generation n infects a susceptible farm at distance d in generation n + 1. When defining a transmission, it is important to determine which parameters need to be included and values for those parameters. In the following lines of code we will generate parameter values and explore how different values affect the behavior of the transmission kernel.
+In this practical we are using a generational model, which only depends on spatial relationships rather than temporal, i.e., we do not need to worry about time. We are interested in characterizing the transmission of infection from one farm to another. The probability of transmission from one farm to another is called the transmission kernel, k(d). The spatial transmission kernel k(d) in this model is defined as the probability that an infectious farm in generation n infects a susceptible farm at distance d in generation n + 1. When defining a transmission kernel, it is important to determine which parameters need to be included and values for those parameters. In the following lines of code we will generate parameter values and explore how different values affect the behavior of the transmission kernel.
 
 We will use the function `adm.sheep.params` to generate parameters of our model. Type the following commands in the `R` prompt:
 ```{r, eval=FALSE}
@@ -101,7 +101,7 @@ p2["power"] <- 3
 p2
 ```
 
-The command `sapply(X,f)` applies the function f to each member of the vector X and returns a vector of the same length as X. Enter the following commands:
+The command `sapply(X,f)` applies the function `f` to each member of the vector `X` and returns a vector of the same length as `X`. Enter the following commands:
 ```{r, eval=FALSE}
 xvals <- (1:150)*100
 plot(xvals,p1["beta"]*sapply(xvals,adm.offset.kernel,p1),type="l",log="x")
@@ -133,7 +133,7 @@ adm.plot.gen(farmdf)
 
 **Q 2.3** What is your best guess for the basic reproductive number for this pathogen at the level of the farm?
 
-**Q 2.4** Do you ovserve exponential growth?
+**Q 2.4** Do you observe exponential growth?
 
 **Q 2.5** How does the spatial nature of the process affect the crude time series of incidence?
 
