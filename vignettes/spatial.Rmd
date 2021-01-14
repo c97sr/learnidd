@@ -59,7 +59,7 @@ farmdf <- adm.load.sheep.prep.sim()
 plot(farmdf$easting, farmdf$northing)
 ```
 
-**Q 1.1** Copy the chart and describe it. Use [www.streetmap.co.uk](www.streetmap.co.uk) to see if you can match the (slightly fuzzy) shape to the coastline of Kent. On street map, the default coordinates at the bottom of the map window are in OS grid references.
+**Q 1.1** Copy the chart and describe it. Use [https://www.streetmap.co.uk](www.streetmap.co.uk) to see if you can match the (slightly fuzzy) shape to the coastline of Kent. On street map, the default coordinates at the bottom of the map window are in OS grid references.
 
 **Q 1.2** Enter the following commands and describe in words the changes in the chart you made for the previous question.
 ```{r, eval=FALSE}
