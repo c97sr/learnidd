@@ -1,6 +1,6 @@
 ---
 title: "Influenza Forecasting Solutions"
-author: "Steven Riley, Caroline Walters, Ada Yan"
+author: "Steven Riley, Caroline Walters, Ada Yan, Anne Cori, David Haw"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
@@ -218,7 +218,7 @@ calc_prediction_accuracy(prediction_bounds)
 
 **Qu. 2.5** What might be causes of error in the prediction?
 
-**Ans. 2.5** The linear regression model does not capture the exponential growth during the early stages of the epidemic, or the decline in incidence as susceptibles are depleted.
+**Ans. 2.5** The linear regression model does not capture the exponential growth during the early stages of the epidemic, or the decline in incidence as susceptibles are depleted (and/or interventions are initiated).
 This suggests that linear regression on a linear scale is not an appropriate method for making forecasts.
 
 
@@ -297,7 +297,7 @@ The prediction is accurate for 4 out of the 8 weeks.
 **Qu. 3.5** What might be causes of error in the prediction?
 
 **Ans. 3.5**
-Linear regression on a log scale predicts a continued exponential increase rather than a decline in the epidemic due to the depletion of susceptibles.
+Linear regression on a log scale predicts a continued exponential increase rather than a decline in the epidemic due to the depletion of susceptibles (and/or implementation of interventions).
 This suggests that linear regression on a log scale is not an appropriate method for predicting the peak timing, height or duration of an epidemic, although it does very well in the early stages of the epidemic.
 
 If too few data points are used, a small amount of error in each data point can change our estimate of the gradient drastically, decreasing the accuracy of our prediction.
@@ -334,8 +334,8 @@ params_df <- data.frame(Parameter = c("$R_0 = \\beta \\tau_I$",
                                         "Initial number of infectious individuals",
                                         "Proportion of cases which are reported"),
                                       Value = c("varied",
-                                                "1.6 day$^{-1}$",
-                                                "1 day$^{-1}$",
+                                                "1.6 day",
+                                                "1 day",
                                                 "$8.5 \\times 10^6$",
                                                 "100",
                                                 "0.006"))
@@ -607,6 +607,29 @@ Things we have not taken into account in this model include
 
 We don't know which of these factors might influence the predictions.
 
+## Important topics to discuss throughout the practical
+
+* Uncertainty in projections. We only provide point projections here; those would
+be more useful with a quantification of the uncertainty around those points. 
+Discuss how you would go about capturing uncertainty for linear/log linear 
+and for compartmental model based projections.
+
+* Assessing the quality of the forecasts. Here we used an arbitrary threshold on 
+the relative error to characterise the quality of the forecasts. How could we 
+better characterise forecasts as good or not? 
+
+* Here we ignored delays in reporting, so we assume all cases from day t are observed
+on day t. How would delays in reporting affect the data, and affect the way you
+use them to generate projections? 
+
+* Where could you find data to inform the SEIR model parameters that you are not
+directly estimating? 
+
 ## Extension work
 
-If you have completed all of the tasks, please ask one of the course demonstrators for extension work.
+If you have completed all of the tasks, please ask one of the course demonstrators for extension work. 
+
+Possible extensions may be to think about how one would model 
+different interventions which are being considered by policy makers (e.g. case isolation,
+restrictions in contacts, vaccination); write on paper how your flowchart / parameters
+may change to model any of those. 

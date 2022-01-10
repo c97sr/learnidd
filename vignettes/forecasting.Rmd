@@ -1,6 +1,6 @@
 ---
 title: "Influenza Forecasting"
-author: "Steven Riley, Caroline Walters, Ada Yan"
+author: "Steven Riley, Caroline Walters, Ada Yan, Anne Cori, David Haw"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
@@ -75,7 +75,7 @@ Record your results in a table.
 
 We will now use our knowledge of the real situation to explore different models for prediction.
 
-LUNCH BREAK
+BREAK suggested :-)
 
 ## 2. Linear Regression on Linear Incidence
 
@@ -204,8 +204,8 @@ params_df <- data.frame(Parameter = c("$R_0 = \\beta \\tau_I$",
                                         "Initial number of infectious individuals",
                                         "Proportion of cases which are reported"),
                                       Value = c("varied",
-                                                "1.6 day$^{-1}$",
-                                                "1 day$^{-1}$",
+                                                "1.6 day",
+                                                "1 day",
                                                 "$8.5 \\times 10^6$",
                                                 "100",
                                                 "0.006"))
