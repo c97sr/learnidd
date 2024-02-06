@@ -13,13 +13,13 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this idsource.  If not, see <http://www.gnu.org/licenses/>. 
+# along with this idsource.  If not, see <http://www.gnu.org/licenses/>.
 
 # You may need something similar to setwd("/Users/sriley/Dropbox/talks/20120309_MSc_Adv_Spatial/")
 # A function to load up a file and prepare objects to be used for simulation
 
 #' sets up data set for simulation
-#' 
+#'
 #' @param df data frame with input data for simulation
 #' @return data frame with additional columns 'seqid' and 'g_i'
 #' @export
@@ -30,23 +30,23 @@ adm.load.sheep.prep.sim <- function(
 		#max_kernel_dist=15000,
 		#simsteps=0:100
     ) {
-	
+
 	# Load up the file
 	#dat <- read.csv(filename)
   dat <- df
 	nofarms <- dim(dat)[1]
-	
+
 	# Add dummy columns for the different elements of the simulation
 	dat <- cbind(seqid=1:nofarms,dat,g_i=rep(-1,nofarms))
-	
+
 	dat
-	
+
 }
 
 #' creates distance matrix
-#' 
+#'
 #' @param df data frame
-#' @return distance matrix 
+#' @return distance matrix
 #' @export
 
 adm.setup.aux.mat <- function(df) {
@@ -69,7 +69,7 @@ adm.setup.aux.mat <- function(df) {
 
 
 #' Function to see farms randomly near to the coast
-#' 
+#'
 #' @param tab data frame with farm coordinates
 #' @param nseed number of seeds
 #' @param sdsq vector of bounds for easting and northing coordinates
@@ -93,7 +93,7 @@ adm.seed.sheep <- function(tab,nseed=1,sdsq=c(0,10000000,0,1000000)) {
 }
 
 #' Function to plot farms randomly near to the coast
-#' 
+#'
 #' @param tab data frame with farm coordinates
 #' @param vecseeds vector of seeds
 #' @return plot of randomly selected farms near the coast
@@ -106,7 +106,7 @@ adm.plot.farm.and.seeds <- function(tab,vecseeds) {
 }
 
 #' Assumes the existance of farmdf in an enclosing environment
-#' 
+#'
 #' @param s index of return vector
 #' @param df data frame with farm coordinates
 #' @param newgen indicator variable for whether there is a new generation (0=no, 1=yes)
@@ -152,7 +152,7 @@ adm.apply.gen.model <- function(p,df,distmatrix=NULL) {
 						dist <- distmatrix[i,j]
 					}
 					if (dist < p["cutoff"]) {
-						if (p["beta"]*adm.offset.kernel(dist) > runif(1)) {
+						if (p["beta"]*adm.offset.kernel(dist, p) > runif(1)) {
 							rtn[j] <- gen
 							# cat(i,j,"\n")
 							# flush.console()
@@ -161,7 +161,7 @@ adm.apply.gen.model <- function(p,df,distmatrix=NULL) {
 				}
 			}
 		}
-	}	
+	}
 	rtn
 }
 
@@ -177,7 +177,7 @@ adm.plot.gen <- function(datf,gens=c(0,1,2,3),cols=c("red","blue","green","orang
 }
 
 #' Function to setup a parameter object for the smv simulations
-#' 
+#'
 #' @return vector of parameter values
 #' @export
 

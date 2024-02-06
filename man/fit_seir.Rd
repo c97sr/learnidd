@@ -11,7 +11,7 @@ fit_seir(incidence_data, current_week, starting_week, R_0_min, R_0_max)
 
 \item{current_week}{numeric vector of length 1: week number of the current week}
 
-\item{starting_week}{numeric vector of length 1: 
+\item{starting_week}{numeric vector of length 1:
 guess for week number when the epidemic started. Use data from starting week
 to current week to predict}
 

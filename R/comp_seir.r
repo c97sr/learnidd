@@ -1,5 +1,5 @@
 # Copyright Steven Riley (sr@stevenriley.net)
-# 
+#
 ## TODO make these comments use double ##
 # This file is part of the library idd.
 #
@@ -44,6 +44,7 @@
 #' @return A list of two elements. The first is the incidence of infection
 #' and the second is the timepoints to which the incidence refers.
 #'
+#' @export
 #' @examples comp_seir()
 #' @examples comp_seir(R0=0.999)
 comp_seir <- function(

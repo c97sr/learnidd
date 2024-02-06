@@ -7,19 +7,19 @@
 calc_prediction_accuracy(prediction_df, tolerance = 0.25)
 }
 \arguments{
-\item{prediction_df}{prediction data frame returned by 
+\item{prediction_df}{prediction data frame returned by
 \code{extract_predicted_points} or \code{extract_predicted_points_seir}}
 
 \item{tolerance}{numeric vector of length 1: parameter specifying range
-within which the predicted incidence should fall.  For example, if 
-tolerance = 0.25, a predicted point is deemed to be accurate if the 
+within which the predicted incidence should fall.  For example, if
+tolerance = 0.25, a predicted point is deemed to be accurate if the
 predicted incidence is between 75\% and 125\% of the observed incidence.}
 }
 \value{
-numeric vector of length 1: the proportion of prediction points 
+numeric vector of length 1: the proportion of prediction points
 which are within a given percentage threshold of the observed incidence
 }
 \description{
-\code{calc_prediction_accuracy} calculates the proportion of prediction points 
+\code{calc_prediction_accuracy} calculates the proportion of prediction points
 which are within a given percentage threshold of the observed incidence
 }

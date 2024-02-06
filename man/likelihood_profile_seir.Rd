@@ -4,15 +4,20 @@
 \alias{likelihood_profile_seir}
 \title{construct a likelihood profile for R_0 given data}
 \usage{
-likelihood_profile_seir(incidence_data, current_week, starting_week,
-  R_0_min, R_0_max)
+likelihood_profile_seir(
+  incidence_data,
+  current_week,
+  starting_week,
+  R_0_min,
+  R_0_max
+)
 }
 \arguments{
 \item{incidence_data}{incidence data extracted by \code{extract_incidence}}
 
 \item{current_week}{numeric vector of length 1: week number of the current week}
 
-\item{starting_week}{numeric vector of length 1: 
+\item{starting_week}{numeric vector of length 1:
 guess for week number when the epidemic started. Use data from starting week
 to current week to predict}
 
@@ -28,6 +33,6 @@ R_0_vec: numeric vector of R_0 values which we're scanning over
 log_likelihood_vec: log likelihood for those values of R_0
 }
 \description{
-\code{likelihood_profile_seir} calculates the log likelihood of the model 
+\code{likelihood_profile_seir} calculates the log likelihood of the model
 given the data, for a range of R_0. The other parameters are fixed
 }
