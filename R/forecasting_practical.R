@@ -486,7 +486,7 @@ solve_seir_wrapper <- function(R_0, n_weeks) {
   infectious_period <- 1
   N <- 8.5e6
   I_0 <- 100
-  reporting_rate <- 0.01
+  reporting_rate <- 0.006
   # solve ODEs
   solve_seir_model(R_0, latent_period, infectious_period, N, I_0, n_weeks) * reporting_rate
 }
