@@ -2,7 +2,7 @@
 % Please edit documentation in R/forecasting_practical.R
 \name{solve_seir_wrapper}
 \alias{solve_seir_wrapper}
-\title{solve SEIR model for incidence, specifying default parameters except for 
+\title{solve SEIR model for incidence, specifying default parameters except for
 \code{R_0} and \code{n_weeks}}
 \usage{
 solve_seir_wrapper(R_0, n_weeks)

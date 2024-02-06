@@ -4,8 +4,12 @@
 \alias{linear_regression}
 \title{performs linear regression for a given country and year}
 \usage{
-linear_regression(incidence_data, current_week = 47, n_weeks_prior = 4,
-  log_transform = TRUE)
+linear_regression(
+  incidence_data,
+  current_week = 47,
+  n_weeks_prior = 4,
+  log_transform = TRUE
+)
 }
 \arguments{
 \item{incidence_data}{data frame extracted by \code{extract_incidence}}
@@ -14,15 +18,15 @@ linear_regression(incidence_data, current_week = 47, n_weeks_prior = 4,
 
 \item{n_weeks_prior}{numeric vector of length 1: number of weeks' previous data to use}
 
-\item{log_transform}{logical vector of length 1: if TRUE, perform linear 
-regression on log transformed data, otherwise perform linear regression on 
+\item{log_transform}{logical vector of length 1: if TRUE, perform linear
+regression on log transformed data, otherwise perform linear regression on
 original data}
 }
 \value{
 linear regression object (see documentation for \code{lm})
 }
 \description{
-\code{linear_regression} takes the incidence data (already subsetted for 
+\code{linear_regression} takes the incidence data (already subsetted for
 country and year) and performs linear regression.
 We also specify the "current week" and how many previous weeks' worth of data
 to use.

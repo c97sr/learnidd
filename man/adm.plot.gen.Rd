@@ -4,8 +4,11 @@
 \alias{adm.plot.gen}
 \title{Function to plot the generations of the simulation}
 \usage{
-adm.plot.gen(datf, gens = c(0, 1, 2, 3), cols = c("red", "blue",
-  "green", "orange"))
+adm.plot.gen(
+  datf,
+  gens = c(0, 1, 2, 3),
+  cols = c("red", "blue", "green", "orange")
+)
 }
 \arguments{
 \item{datf}{data frame with farm coordinates and generation times}

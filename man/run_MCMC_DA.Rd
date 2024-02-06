@@ -4,8 +4,7 @@
 \alias{run_MCMC_DA}
 \title{run MCMC with data augmentation to fit parameters to data}
 \usage{
-run_MCMC_DA(fit_parnames, nbIteration, randomWalkSD, currentParameter,
-  data)
+run_MCMC_DA(fit_parnames, nbIteration, randomWalkSD, currentParameter, data)
 }
 \arguments{
 \item{fit_parnames}{vector of names of parameter(s) to be fitted}

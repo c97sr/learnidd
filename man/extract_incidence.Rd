@@ -15,7 +15,7 @@ extract_incidence(flu_data, country_code = "ISR", year = 2016)
 }
 \value{
 data frame with three columns:
-t: numeric vector of length 52/53 (depending on the year): 
+t: numeric vector of length 52/53 (depending on the year):
 index running from 1 to 52/53
 time_name: character vector of the same length as t:
 week numbers of the data we've extracted

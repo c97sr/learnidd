@@ -4,7 +4,17 @@
 \alias{solve_seir_model}
 \title{solve SEIR model for incidence}
 \usage{
-solve_seir_model(R_0, latent_period, infectious_period, N, I_0, n_weeks)
+solve_seir_model(
+  R_0,
+  latent_period,
+  infectious_period,
+  N,
+  I_0,
+  n_weeks,
+  S_0 = N - I_0,
+  E_0 = 0,
+  full_output = FALSE
+)
 }
 \arguments{
 \item{R_0}{numeric vector of length 1: basic reproduction number}

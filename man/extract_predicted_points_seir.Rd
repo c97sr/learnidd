@@ -4,8 +4,13 @@
 \alias{extract_predicted_points_seir}
 \title{extract predicted points for SEIR model}
 \usage{
-extract_predicted_points_seir(R_0, incidence_data, current_week,
-  starting_week, weeks_ahead)
+extract_predicted_points_seir(
+  R_0,
+  incidence_data,
+  current_week,
+  starting_week,
+  weeks_ahead
+)
 }
 \arguments{
 \item{R_0}{numeric vector of length 1: basic reproduction number}
@@ -14,7 +19,7 @@ extract_predicted_points_seir(R_0, incidence_data, current_week,
 
 \item{current_week}{numeric vector of length 1: week number of the current week}
 
-\item{starting_week}{numeric vector of length 1: 
+\item{starting_week}{numeric vector of length 1:
 guess for week number when the epidemic started. Use data from starting week
 to current week to predict}
 

@@ -9,13 +9,13 @@ calc_log_likelihood(data, model_prediction)
 \arguments{
 \item{data}{numeric vector: incidence data}
 
-\item{model_prediction}{numeric vector of same length as \code{data}: 
+\item{model_prediction}{numeric vector of same length as \code{data}:
 incidence according to model}
 }
 \value{
 log likelihood: numeric vector of length 1
 }
 \description{
-\code{calc_log_likelihood} calculates the log likelihood of the incidence data 
+\code{calc_log_likelihood} calculates the log likelihood of the incidence data
 given model prediction (assuming Poisson intensity)
 }

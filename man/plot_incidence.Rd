@@ -9,7 +9,7 @@ plot_incidence(incidence_data, log_scale = FALSE)
 \arguments{
 \item{incidence_data}{data frame extracted by \code{extract_incidence}}
 
-\item{log_scale}{logical vector of length 1: if TRUE, plot on log scale, 
+\item{log_scale}{logical vector of length 1: if TRUE, plot on log scale,
 otherwise plot on linear scale}
 }
 \value{
