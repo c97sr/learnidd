@@ -445,12 +445,18 @@ extract_predicted_points_seir <- function(R_0, incidence_data,
   # solve the SEIR model from the starting week
   n_weeks_prior <- current_week_index - starting_week_index
   predicted_points <- solve_seir_wrapper(R_0, weeks_ahead + n_weeks_prior, reporting_rate)
-  # exclude points before current week from prediction
+  # split points before/after current week from prediction
+  fitted_points <- predicted_points[seq_len(n_weeks_prior + 1)]
   predicted_points <- predicted_points[-seq_len(n_weeks_prior + 1)]
 
   # paste the predicted data points at the right times into the data frame
   incidence_data$prediction <- rep(NA, nrow(incidence_data))
   incidence_data$prediction[current_week_index + seq_along(predicted_points)] <- predicted_points
+
+  # add another columns for fitted values
+  incidence_data$fitted <- rep(NA, nrow(incidence_data))
+  incidence_data$fitted[starting_week_index + seq_along(fitted_points) - 1] <- fitted_points
+
   return(incidence_data)
 }
 
