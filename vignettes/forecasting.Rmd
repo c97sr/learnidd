@@ -232,10 +232,10 @@ that is, the cumulative incidence is the number of individuals which have ever e
 The incidence during a given week can then be obtained by subtracting the cumulative incidence of that week from the cumulative incidence in the previous week.
 
 To make a prediction using the SEIR model, we fit the model parameters to the incidence data which we are using to predict.
-In this practical, we will focus on fitting the basic reproduction number $R_0$, and assume that all other parameter values are known (see table above).
+In this practical, we will focus on fitting the basic reproduction number $R_0$, and assume that all other parameter values are known (see table above and function `set_seir_params`).
 
 We fit the model to the data by maximising the likelihood of observing the data given model parameters.
-We will assume that the observed incidence is Poisson distributed with respect to the actual incidence, with an additional correction for the proportion of cases which are reported.
+We will assume that the observed incidence is Poisson distributed with respect to the actual incidence, with an additional correction for the proportion of cases which are reported (`reporting_fraction`), assumed known and fixed below to 0.6% by default.
 
 First, we will plot the log likelihood for a range of $R_0$, to get a sense of where the maximum might be.
 
