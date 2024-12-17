@@ -102,7 +102,7 @@ plot_incidence <- function(incidence_data, log_scale = FALSE) {
   label_index <- seq(1, nrow(incidence_data), by = label_x_axis_every)
   g <- ggplot(incidence_data, aes(x = t))
   # if the data frame contains a prediction, plot the data points used to
-  # predict in red, and the rest in black
+  # predict in red, the past (not used for prediction) in black, and the future in grey
   if("prediction" %in% colnames(incidence_data)) {
     g <- g + geom_point(aes(y = incidence, color = split_times),
                         na.rm = TRUE) +
@@ -121,6 +121,10 @@ plot_incidence <- function(incidence_data, log_scale = FALSE) {
   # if the data frame contains a prediction, plot it in blue
   if("prediction" %in% colnames(incidence_data)) {
     g <- g + geom_point(aes(y = prediction), color = "blue", na.rm = TRUE)
+  }
+  # if the data frame contains a fitted part, plot it in blue as a line
+  if("fitted" %in% colnames(incidence_data)) {
+    g <- g + geom_line(aes(y = fitted), color = "blue", na.rm = TRUE)
   }
   return(g)
 }
@@ -235,6 +239,12 @@ extract_predicted_points <- function(lm_output, incidence_data, weeks_ahead,
   time_used_to_predict[lm_output$model$t] <- TRUE
   incidence_data$time_used_to_predict <- time_used_to_predict
 
+  # add another columns for fitted values
+  fitted_points <- intercept + gradient * lm_output$model$t
+  if(log_transform) {
+    fitted_points <- exp(fitted_points)
+  }
+
   # make a column in the data frame recording which time points are in the future
   split_times <- rep("past", nrow(incidence_data))
   split_times[lm_output$model$t] <- "used_for_fitting"
@@ -244,6 +254,11 @@ extract_predicted_points <- function(lm_output, incidence_data, weeks_ahead,
   # paste the predicted data points at the right times into the data frame
   incidence_data$prediction <- rep(NA, nrow(incidence_data))
   incidence_data$prediction[last_timepoint_used + seq_len(weeks_ahead)] <- predicted_points
+
+  # paste the fitted data points at the right times into the data frame
+  incidence_data$fitted <- rep(NA, nrow(incidence_data))
+  incidence_data$fitted[time_used_to_predict] <- fitted_points
+
   return(incidence_data)
 }
 

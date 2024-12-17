@@ -130,7 +130,7 @@ prediction_df <- extract_predicted_points(linear_regression_output,
 plot_incidence(prediction_df)
 ```
 
-**Qu. 2.2** What do you think the black, red and blue points represent on this chart?
+**Qu. 2.2** What do you think the black, red, blue and grey points represent on this chart?
 
 **Qu. 2.3** At what times (if any) do you think the model gives a good prediction?  In qualitative terms, does prediction accuracy change over time? If so, how?
 
