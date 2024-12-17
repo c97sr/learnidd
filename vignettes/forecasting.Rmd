@@ -40,6 +40,7 @@ First, load the data set.
 Plot the data on influenza-like illness in Israel for all years.
 ```{r}
 library(learnidd)
+devtools::load_all("../")
 ```
 
 ```{r}
@@ -244,7 +245,8 @@ starting_week <- 37 # our guess for the start time of the epidemic. We assume th
 # the epidemic starts with 100 infectious individuals at this time.
 R_0_min <- 1
 R_0_max <- 5
-likelihood_profile_output <- likelihood_profile_seir(incidence_data, current_week, starting_week, R_0_min, R_0_max)
+reporting_fraction <- 0.006
+likelihood_profile_output <- likelihood_profile_seir(incidence_data, current_week, starting_week, R_0_min, R_0_max, reporting_fraction)
 ```
 ```{r eval = FALSE}
 plot_likelihood_profile(likelihood_profile_output)
@@ -263,7 +265,7 @@ Run the code
 ```{r}
 R_0_min <- 1
 R_0_max <- 2
-R_0 <- fit_seir(incidence_data, current_week, starting_week, R_0_min, R_0_max)
+R_0 <- fit_seir(incidence_data, current_week, starting_week, R_0_min, R_0_max, reporting_fraction)
 ```
 ```{r eval = FALSE}
 R_0
@@ -285,7 +287,8 @@ Run the code
 prediction_df <- extract_predicted_points_seir(R_0, incidence_data, 
                                            current_week,
                                            starting_week, 
-                                           weeks_ahead = 8)
+                                           weeks_ahead = 8,
+                                           reporting_fraction)
 ```
 ```{r eval = FALSE}
 # plot prediction
