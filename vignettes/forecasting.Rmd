@@ -73,7 +73,20 @@ The duration of the epidemic is the time between when the epidemic first exceeds
 **Qu. 1.4**: for each year (2010-2016), by visual inspection of the plot, identify the onset time, peak time, peak incidence and duration of the epidemic.  
 Record your results in a table.
 
-We will now use our knowledge of the real situation to explore different models for prediction.
+The analyses above demonstrates the common features but also the differences 
+between each seasonal flu epidemic, across countries and years. Because flu is
+a large driver of winter hospital pressures in many countries, each year, we
+try our best to predict what this season will look like; we can be interested in 
+how early the season starts, how fast cases will grow, when they will peak, 
+how big the peak will be etc. 
+
+In the remaining sections, we mimick such real time analysis. We assume we are 
+somewhere at the start of the flu year, and we are using observations to date,
+as well as our knowledge of flu and the national context, to explore different 
+models for predicting flu for the rest of the season. Try to keep this in mind
+as you work through the sections. In some questions, we use the fact that we
+are in fact doing retrospective analysis to assess how well our predictions are 
+doing (which you cannot do in real time by definition!). 
 
 BREAK suggested :-)
 

@@ -98,16 +98,15 @@ plot_incidence_all <- function(flu_data, country_code = "ISR") {
 #' @import ggplot2
 #' @export
 plot_incidence <- function(incidence_data, log_scale = FALSE) {
-
   label_x_axis_every <- 5
   label_index <- seq(1, nrow(incidence_data), by = label_x_axis_every)
   g <- ggplot(incidence_data, aes(x = t))
   # if the data frame contains a prediction, plot the data points used to
   # predict in red, and the rest in black
   if("prediction" %in% colnames(incidence_data)) {
-    g <- g + geom_point(aes(y = incidence, color = time_used_to_predict),
+    g <- g + geom_point(aes(y = incidence, color = split_times),
                         na.rm = TRUE) +
-      scale_color_manual(breaks = c(F, T), values = c("black", "red"))
+      scale_color_manual(breaks = c("past", "used_for_fitting", "future"), values = c("black", "red", "grey"))
   } else {
     # otherwise plot all data points in black
     g <- g + geom_point(aes(y = incidence), na.rm = TRUE)
@@ -236,6 +235,12 @@ extract_predicted_points <- function(lm_output, incidence_data, weeks_ahead,
   time_used_to_predict[lm_output$model$t] <- TRUE
   incidence_data$time_used_to_predict <- time_used_to_predict
 
+  # make a column in the data frame recording which time points are in the future
+  split_times <- rep("past", nrow(incidence_data))
+  split_times[lm_output$model$t] <- "used_for_fitting"
+  if(max(lm_output$model$t) + 1 < nrow(incidence_data)) split_times[seq(max(lm_output$model$t) + 1, nrow(incidence_data))] <- "future"
+  incidence_data$split_times <- split_times
+
   # paste the predicted data points at the right times into the data frame
   incidence_data$prediction <- rep(NA, nrow(incidence_data))
   incidence_data$prediction[last_timepoint_used + seq_len(weeks_ahead)] <- predicted_points
@@ -250,14 +255,18 @@ extract_predicted_points <- function(lm_output, incidence_data, weeks_ahead,
 #' @param data numeric vector: incidence data
 #' @param model_prediction numeric vector of same length as \code{data}:
 #' incidence according to model
+#' @param reporting_rate a numeric value between 0 and 1 corresponding to the proportion of all infections that get reported. Default value set to 6 per thousand
 #' @return log likelihood: numeric vector of length 1
 #' @export
 #'
-calc_log_likelihood <- function(data, model_prediction) {
+calc_log_likelihood <- function(data, model_prediction, reporting_rate = 0.006) {
   # check that the number of data points is the same as the number of
   # prediction points
   stopifnot(length(data) == length(model_prediction) &&
               identical(data, round(data)))
+  if(!is.numeric(reporting_rate)) {stop("reporting_rate must be numeric")}
+  if(length(reporting_rate) != 1) {stop("reporting_rate must be a single value")}
+  if(! ((reporting_rate >= 0) && (reporting_rate <= 1))) {stop("reporting_rate must be between 0 and 1.")}
 
   # exclude na data points
   is_na_data <- which(is.na(data))
@@ -271,7 +280,7 @@ calc_log_likelihood <- function(data, model_prediction) {
   model_prediction[model_prediction < 1] <- 1
   # actual counts = reported counts / reporting rate -- correct for this
   # when calculating likelihood
-  reporting_rate <- 0.006
+
   # log likelihood assuming Poisson-distributed errors
   log_likelihood <- sum(dpois(round(data / reporting_rate), model_prediction/ reporting_rate, log = TRUE))
   return(log_likelihood)
@@ -291,12 +300,13 @@ calc_log_likelihood <- function(data, model_prediction) {
 #' which to construct likelihood profile
 #' @param R_0_max numeric vector of length 1: upper bound of R_0 values over
 #' which to construct likelihood profile
+#' @param reporting_rate a numeric value between 0 and 1 corresponding to the proportion of all infections that get reported. Default value set to 6 per thousand
 #' @return a data frame with the following columns:
 #' R_0_vec: numeric vector of R_0 values which we're scanning over
 #' log_likelihood_vec: log likelihood for those values of R_0
 #' @export
 #'
-likelihood_profile_seir <- function(incidence_data, current_week, starting_week, R_0_min, R_0_max) {
+likelihood_profile_seir <- function(incidence_data, current_week, starting_week, R_0_min, R_0_max, reporting_rate = 0.006) {
 
   # extract incidence data for weeks used to predict
   starting_week_index <- extract_week_index(starting_week, incidence_data$time_name)
@@ -310,8 +320,8 @@ likelihood_profile_seir <- function(incidence_data, current_week, starting_week,
   # a function which solves the SEIR model and calculates the log likelihood
   # for a given value of R_0
   evaluate_model_and_calc_log_likelihood <- function(R_0) {
-    model_prediction <- solve_seir_wrapper(R_0, n_weeks_prior)
-    log_likelihood <- calc_log_likelihood(incidence_data$incidence, model_prediction)
+    model_prediction <- solve_seir_wrapper(R_0, n_weeks_prior, reporting_rate)
+    log_likelihood <- calc_log_likelihood(incidence_data$incidence, model_prediction, reporting_rate)
     return(log_likelihood)
   }
 
@@ -352,9 +362,10 @@ plot_likelihood_profile <- function(likelihood_profile_output) {
 #' which to search
 #' @param R_0_max numeric vector of length 1: upper bound of R_0 values over
 #' which to search
+#' @param reporting_rate a numeric value between 0 and 1 corresponding to the proportion of all infections that get reported. Default value set to 6 per thousand
 #' @return the value of R_0 with the maximum likelihood
 #' @export
-fit_seir <- function(incidence_data, current_week, starting_week, R_0_min, R_0_max) {
+fit_seir <- function(incidence_data, current_week, starting_week, R_0_min, R_0_max, reporting_rate = 0.006) {
 
   # extract incidence data for weeks used to predict
   starting_week_index <- extract_week_index(starting_week, incidence_data$time_name)
@@ -368,8 +379,8 @@ fit_seir <- function(incidence_data, current_week, starting_week, R_0_min, R_0_m
   # a function which solves the SEIR model and calculates the log likelihood
   # for a given value of R_0
   evaluate_model_and_calc_log_likelihood <- function(R_0) {
-    model_prediction <- solve_seir_wrapper(R_0, n_weeks_prior)
-    log_likelihood <- calc_log_likelihood(incidence_data$incidence, model_prediction)
+    model_prediction <- solve_seir_wrapper(R_0, n_weeks_prior, reporting_rate)
+    log_likelihood <- calc_log_likelihood(incidence_data$incidence, model_prediction, reporting_rate)
     return(log_likelihood)
   }
 
@@ -392,26 +403,33 @@ fit_seir <- function(incidence_data, current_week, starting_week, R_0_min, R_0_m
 #' to current week to predict
 #' @param current_week numeric vector of length 1: week number of the current week
 #' @param weeks_ahead numeric vector of length 1: number of weeks to predict ahead
+#' @param reporting_rate a numeric value between 0 and 1 corresponding to the proportion of all infections that get reported. Default value set to 6 per thousand
 #' @return data frame with predicted points and original data
 #' @export
 #'
 extract_predicted_points_seir <- function(R_0, incidence_data,
                                           current_week,
                                           starting_week,
-                                          weeks_ahead) {
+                                          weeks_ahead,
+                                          reporting_rate = 0.006) {
   # find the times for which we did the prediction
   starting_week_index <- extract_week_index(starting_week, incidence_data$time_name)
   current_week_index <- extract_week_index(current_week, incidence_data$time_name)
 
   # make a column in the data frame recording which time points were used to predict
   time_used_to_predict <- rep(FALSE, nrow(incidence_data))
-
   time_used_to_predict[seq(starting_week_index, current_week_index)] <- TRUE
   incidence_data$time_used_to_predict <- time_used_to_predict
 
+  # make a column in the data frame recording which time points are in the future
+  split_times <- rep("past", nrow(incidence_data))
+  split_times[seq(starting_week_index, current_week_index)] <- "used_for_fitting"
+  if(current_week_index + 1 < nrow(incidence_data)) split_times[seq(current_week_index + 1, nrow(incidence_data))] <- "future"
+  incidence_data$split_times <- split_times
+
   # solve the SEIR model from the starting week
   n_weeks_prior <- current_week_index - starting_week_index
-  predicted_points <- solve_seir_wrapper(R_0, weeks_ahead + n_weeks_prior)
+  predicted_points <- solve_seir_wrapper(R_0, weeks_ahead + n_weeks_prior, reporting_rate)
   # exclude points before current week from prediction
   predicted_points <- predicted_points[-seq_len(n_weeks_prior + 1)]
 
@@ -469,6 +487,44 @@ solve_seir_model <- function(R_0, latent_period, infectious_period, N, I_0, n_we
   }
 }
 
+#' Set up parameters values for the natural history (latency and infectious
+#' period), population size, and initial conditions (initial number of infected
+#' individuals)
+#'
+#' @param latent_period positive number representing the average duration of the latent period (in days)
+#' @param infectious_period positive number representing the average duration of the infectious period (in days)
+#' @param N positive integer for the total population size
+#' @param I_0 positive integer for the initial number of infected individuals
+#'
+#' @return
+#' @export
+#'
+#' @examples
+set_seir_params <- function(latent_period = 1.6,
+                            infectious_period = 1,
+                            N = 8.5e6,
+                            I_0 = 100) {
+  if(!is.numeric(latent_period)) {stop("latent_period must be numeric")}
+  if(length(latent_period) != 1) {stop("latent_period must be a single value")}
+  if(latent_period <= 0) {stop("latent_period must be > 0.")}
+  if(!is.numeric(infectious_period)) {stop("infectious_period must be numeric")}
+  if(length(infectious_period) != 1) {stop("infectious_period must be a single value")}
+  if(infectious_period <= 0) {stop("infectious_period must be > 0.")}
+  if(!is.numeric(N)) {stop("N must be numeric")}
+  if(length(N) != 1) {stop("N must be a single value")}
+  if(N <= 0) {stop("N must be > 0.")}
+  if(abs(as.integer(N) - N) > 0.0001) {stop("N must be an integer.")}
+  if(length(I_0) != 1) {stop("I_0 must be a single value")}
+  if(I_0 <= 0) {stop("I_0 must be > 0.")}
+  if(I_0 >= N) {stop("I_0 must be < N.")}
+  if(abs(as.integer(I_0) - I_0) > 0.0001) {stop("I_0 must be an integer.")}
+
+  list(latent_period = latent_period,
+       infectious_period = infectious_period,
+       N = N,
+       I_0 = I_0)
+}
+
 #' solve SEIR model for incidence, specifying default parameters except for
 #' \code{R_0} and \code{n_weeks}
 #'
@@ -477,18 +533,19 @@ solve_seir_model <- function(R_0, latent_period, infectious_period, N, I_0, n_we
 #'
 #' @param R_0 numeric vector of length 1: basic reproduction number
 #' @param n_weeks numeric vector of length 1: number of weeks for which to solve the model
+#' @param reporting_rate a numeric value between 0 and 1 corresponding to the proportion of all infections that get reported. Default value set to 6 per thousand
 #' @return data frame with predicted points and original data
 #' @export
 #'
-solve_seir_wrapper <- function(R_0, n_weeks) {
-  # specify default parameters
-  latent_period <- 1.6
-  infectious_period <- 1
-  N <- 8.5e6
-  I_0 <- 100
-  reporting_rate <- 0.006
+solve_seir_wrapper <- function(R_0, n_weeks, reporting_rate = 0.006) {
+  if(!is.numeric(reporting_rate)) {stop("reporting_rate must be numeric")}
+  if(length(reporting_rate) != 1) {stop("reporting_rate must be a single value")}
+  if(! ((reporting_rate >= 0) && (reporting_rate <= 1))) {stop("reporting_rate must be between 0 and 1.")}
+
+  # specify default parameters for latency, infectious period, population size and initial number of infected
+  seir_params <- set_seir_params()
   # solve ODEs
-  solve_seir_model(R_0, latent_period, infectious_period, N, I_0, n_weeks) * reporting_rate
+  solve_seir_model(R_0, seir_params$latent_period, seir_params$infectious_period, seir_params$N, seir_params$I_0, n_weeks) * reporting_rate
 }
 
 #' calculate proportion of prediction points which are within threshold
