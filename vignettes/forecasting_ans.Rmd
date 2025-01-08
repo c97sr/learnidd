@@ -124,8 +124,20 @@ max(incidence_data$incidence, na.rm = TRUE)
 sum(incidence_data$incidence > threshold, na.rm = TRUE)
 ```
 
-We will now use our knowledge of the real situation to explore different models for prediction.
+The analyses above demonstrates the common features but also the differences 
+between each seasonal flu epidemic, across countries and years. Because flu is
+a large driver of winter hospital pressures in many countries, each year, we
+try our best to predict what this season will look like; we can be interested in 
+how early the season starts, how fast cases will grow, when they will peak, 
+how big the peak will be etc. 
 
+In the remaining sections, we mimick such real time analysis. We assume we are 
+somewhere at the start of the flu year, and we are using observations to date,
+as well as our knowledge of flu and the national context, to explore different 
+models for predicting flu for the rest of the season. Try to keep this in mind
+as you work through the sections. In some questions, we use the fact that we
+are in fact doing retrospective analysis to assess how well our predictions are 
+doing (which you cannot do in real time by definition!). 
 
 ## 2. Linear Regression on Linear Incidence
 
@@ -174,13 +186,14 @@ prediction_df <- extract_predicted_points(linear_regression_output,
 plot_incidence(prediction_df)
 ```
 
-**Qu. 2.2** What do you think the black, red and blue points represent on this chart?
+**Qu. 2.2** What do you think the black, red, blue and grey points represent on this chart?
 
 **Ans. 2.2** 
 
-* Black: real data points
-* Red: Real data points that we use to make a prediction from
+* Black: real data points in the past, not used for fitting
+* Red: Real data points that we use to fit the model and make a prediction from
 * Blue: predictions of weekly incidence
+* Grey: future observations not used for model fitting. 
 
 **Qu. 2.3** At what times (if any) do you think the model gives a good prediction?  In qualitative terms, does prediction accuracy change over time? If so, how?
 
@@ -348,10 +361,10 @@ that is, the cumulative incidence is the number of individuals which have ever e
 The incidence during a given week can then be obtained by subtracting the cumulative incidence of that week from the cumulative incidence in the previous week.
 
 To make a prediction using the SEIR model, we fit the model parameters to the incidence data which we are using to predict.
-In this practical, we will focus on fitting the basic reproduction number $R_0$, and assume that all other parameter values are known (see table above).
+In this practical, we will focus on fitting the basic reproduction number $R_0$, and assume that all other parameter values are known (see table above and function `set_seir_params`).
 
 We fit the model to the data by maximising the likelihood of observing the data given model parameters.
-We will assume that the observed incidence is Poisson distributed with respect to the actual incidence, with an additional correction for the proportion of cases which are reported.
+We will assume that the observed incidence is Poisson distributed with respect to the actual incidence, with an additional correction for the proportion of cases which are reported (`reporting_fraction`), assumed known and fixed below to 0.6% by default.
 
 First, we will plot the log likelihood for a range of $R_0$, to get a sense of where the maximum might be.
 
@@ -361,7 +374,8 @@ starting_week <- 37 # our guess for the start time of the epidemic. We assume th
 # the epidemic starts with 100 infectious individuals at this time.
 R_0_min <- 1
 R_0_max <- 5
-likelihood_profile_output <- likelihood_profile_seir(incidence_data, current_week, starting_week, R_0_min, R_0_max)
+reporting_fraction <- 0.006
+likelihood_profile_output <- likelihood_profile_seir(incidence_data, current_week, starting_week, R_0_min, R_0_max, reporting_fraction)
 ```
 ```{r eval = TRUE, fig.height = 3, fig.width = 3}
 plot_likelihood_profile(likelihood_profile_output)
@@ -383,7 +397,7 @@ Run the code
 ```{r}
 R_0_min <- 1
 R_0_max <- 2
-R_0 <- fit_seir(incidence_data, current_week, starting_week, R_0_min, R_0_max)
+R_0 <- fit_seir(incidence_data, current_week, starting_week, R_0_min, R_0_max, reporting_fraction)
 ```
 
 ```{r eval = TRUE}
@@ -427,7 +441,8 @@ Run the code
 prediction_df <- extract_predicted_points_seir(R_0, incidence_data, 
                                            current_week,
                                            starting_week, 
-                                           weeks_ahead = 8)
+                                           weeks_ahead = 8,
+                                           reporting_fraction)
 ```
 ```{r eval = TRUE}
 # plot prediction
